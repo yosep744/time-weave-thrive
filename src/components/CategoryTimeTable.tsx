@@ -29,12 +29,32 @@ export const CategoryTimeTable = () => {
         
         const [startHour, startMin] = block.startTime.split(':').map(Number);
         const [endHour, endMin] = block.endTime.split(':').map(Number);
+        
+        // Validate parsed values
+        if (isNaN(startHour) || isNaN(startMin) || isNaN(endHour) || isNaN(endMin)) {
+          console.warn('Invalid time format:', block.startTime, block.endTime);
+          return;
+        }
+        
         const startMinutes = startHour * 60 + startMin;
         const endMinutes = endHour * 60 + endMin;
-        const duration = (endMinutes - startMinutes) / 60;
+        
+        // Calculate duration (handle overnight blocks)
+        let durationMinutes = endMinutes - startMinutes;
+        if (durationMinutes < 0) {
+          durationMinutes += 24 * 60; // Add 24 hours for overnight blocks
+        }
+        
+        // Validate duration (must be positive and less than 24 hours)
+        if (durationMinutes <= 0 || durationMinutes > 24 * 60) {
+          console.warn('Invalid duration:', durationMinutes, 'minutes for block:', block);
+          return;
+        }
+        
+        const durationHours = durationMinutes / 60;
         
         const current = categoryMap.get(block.category) || 0;
-        categoryMap.set(block.category, current + duration);
+        categoryMap.set(block.category, current + durationHours);
       });
 
       const total = Array.from(categoryMap.values()).reduce((sum, val) => sum + val, 0);
@@ -45,10 +65,11 @@ export const CategoryTimeTable = () => {
           const category = categories.find(c => c.value === value);
           return {
             label: category?.label || value,
-            hours: Math.round(hours * 10) / 10,
-            color: category?.color || 'bg-gray-100 text-gray-900 border-gray-300',
+            hours: Math.round(hours * 100) / 100, // Round to 2 decimal places
+            color: category?.color || 'bg-gray-100 text-gray-900 border-gray-300 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600',
           };
         })
+        .filter(item => item.hours > 0) // Only show categories with positive hours
         .sort((a, b) => b.hours - a.hours);
 
       setCategoryTimes(times);

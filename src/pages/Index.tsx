@@ -5,7 +5,6 @@ import { TimeEntry } from "@/components/TimeEntry";
 import { DailyReflection } from "@/components/DailyReflection";
 import { WeeklyStats } from "@/components/WeeklyStats";
 import { MonthlyStats } from "@/components/MonthlyStats";
-import { TodayAnalysis } from "@/components/TodayAnalysis";
 import { CategoryTimeTable } from "@/components/CategoryTimeTable";
 import { WeeklyGoals } from "@/components/WeeklyGoals";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -192,8 +191,7 @@ const Index = () => {
                 <CategoryTimeTable />
               </div>
               
-              <div className="space-y-6">
-                <TodayAnalysis />
+              <div>
                 <DailyReflection />
               </div>
             </div>
