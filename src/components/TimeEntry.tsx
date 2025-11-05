@@ -65,11 +65,9 @@ export interface TimeBlockExport extends TimeBlock {
 export const TimeEntry = () => {
   const today = new Date().toISOString().split('T')[0];
   
-  const [timeBlocks, setTimeBlocks] = useState<TimeBlock[]>([
-    { id: "1", startTime: "09:00", endTime: "12:00", category: "work", activity: "" },
-  ]);
-  
+  const [timeBlocks, setTimeBlocks] = useState<TimeBlock[]>([]);
   const [categories, setCategories] = useState<Category[]>(DEFAULT_CATEGORIES);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
   
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [newCategoryLabel, setNewCategoryLabel] = useState("");
@@ -86,6 +84,11 @@ export const TimeEntry = () => {
       
       if (blocks.length > 0) {
         setTimeBlocks(blocks);
+      } else {
+        // Only set default block if no data exists
+        setTimeBlocks([
+          { id: "1", startTime: "09:00", endTime: "12:00", category: "work", activity: "" }
+        ]);
       }
       
       if (cats.length > 0) {
@@ -95,33 +98,41 @@ export const TimeEntry = () => {
         const { saveCategories } = await import('@/lib/timeBlockStorage');
         await saveCategories(DEFAULT_CATEGORIES);
       }
+      
+      setIsInitialLoad(false);
     };
     
     loadData();
   }, [today]);
 
-  // Save timeBlocks to Supabase
+  // Save timeBlocks to Supabase (skip initial load)
   useEffect(() => {
+    if (isInitialLoad) return;
+    
     const saveData = async () => {
       const { saveTimeBlock } = await import('@/lib/timeBlockStorage');
       await saveTimeBlock(today, timeBlocks);
     };
     
     saveData();
-  }, [timeBlocks, today]);
+  }, [timeBlocks, today, isInitialLoad]);
 
-  // Save categories to Supabase
+  // Save categories to Supabase (skip initial load)
   useEffect(() => {
+    if (isInitialLoad) return;
+    
     const saveData = async () => {
       const { saveCategories } = await import('@/lib/timeBlockStorage');
       await saveCategories(categories);
     };
     
     saveData();
-  }, [categories]);
+  }, [categories, isInitialLoad]);
 
   // Real-time sync from Supabase
   useEffect(() => {
+    if (isInitialLoad) return;
+    
     const channel = supabase
       .channel('time_blocks_changes')
       .on(
@@ -132,12 +143,14 @@ export const TimeEntry = () => {
           table: 'time_blocks',
           filter: `date=eq.${today}`
         },
-        async () => {
+        async (payload) => {
+          // Only update if change was from another client
+          console.log('Realtime update received:', payload);
           const { getTimeBlock } = await import('@/lib/timeBlockStorage');
           const blocks = await getTimeBlock(today);
-          if (blocks.length > 0) {
-            setTimeBlocks(blocks);
-          }
+          setTimeBlocks(blocks.length > 0 ? blocks : [
+            { id: "1", startTime: "09:00", endTime: "12:00", category: "work", activity: "" }
+          ]);
         }
       )
       .on(
@@ -148,6 +161,7 @@ export const TimeEntry = () => {
           table: 'categories'
         },
         async () => {
+          console.log('Categories updated');
           const { getCategories } = await import('@/lib/timeBlockStorage');
           const cats = await getCategories();
           if (cats.length > 0) {
@@ -160,7 +174,7 @@ export const TimeEntry = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [today]);
+  }, [today, isInitialLoad]);
 
   const addTimeBlock = () => {
     const lastBlock = timeBlocks[timeBlocks.length - 1];
