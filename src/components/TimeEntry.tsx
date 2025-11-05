@@ -512,8 +512,8 @@ export const TimeEntry = () => {
                         onMouseDown={(e) => handleBlockResizeStart(e, block.id, 'move')}
                       >
                         {isSelected ? (
-                          <div className="p-2 space-y-2 h-full overflow-auto">
-                            <div className="flex items-center justify-between mb-2">
+                          <div className="p-2 space-y-2 h-full">
+                            <div className="flex items-center justify-between">
                               <div className="flex items-center gap-1">
                                 <GripVertical className="h-4 w-4 opacity-50" />
                                 <span className="text-sm font-semibold">편집 중</span>
@@ -566,31 +566,33 @@ export const TimeEntry = () => {
                               </Select>
                             </div>
                             
-                            <Select
-                              value={block.category}
-                              onValueChange={(value) => updateTimeBlock(block.id, "category", value)}
-                            >
-                              <SelectTrigger className="h-8 text-xs" onClick={(e) => e.stopPropagation()}>
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {categories.map((cat) => (
-                                  <SelectItem key={cat.value} value={cat.value}>
-                                    <span className={`px-2 py-0.5 rounded-md text-xs ${cat.color}`}>
-                                      {cat.label}
-                                    </span>
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            
-                            <Textarea
-                              placeholder="활동 내용"
-                              value={block.activity}
-                              onChange={(e) => updateTimeBlock(block.id, "activity", e.target.value)}
-                              className="min-h-14 text-xs p-2 bg-background/50"
-                              onClick={(e) => e.stopPropagation()}
-                            />
+                            <div className="flex items-center gap-2">
+                              <Select
+                                value={block.category}
+                                onValueChange={(value) => updateTimeBlock(block.id, "category", value)}
+                              >
+                                <SelectTrigger className="h-8 text-xs w-24" onClick={(e) => e.stopPropagation()}>
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {categories.map((cat) => (
+                                    <SelectItem key={cat.value} value={cat.value}>
+                                      <span className={`px-2 py-0.5 rounded-md text-xs ${cat.color}`}>
+                                        {cat.label}
+                                      </span>
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              
+                              <Input
+                                placeholder="활동 내용"
+                                value={block.activity}
+                                onChange={(e) => updateTimeBlock(block.id, "activity", e.target.value)}
+                                className="h-8 text-xs flex-1 bg-background/50"
+                                onClick={(e) => e.stopPropagation()}
+                              />
+                            </div>
                           </div>
                         ) : (
                           <div className="px-2.5 py-2 h-full flex flex-col gap-1">
