@@ -6,7 +6,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Trash2, Clock } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Plus, Trash2, Clock, Settings, Palette } from "lucide-react";
 
 interface TimeBlock {
   id: string;
@@ -16,7 +17,13 @@ interface TimeBlock {
   activity: string;
 }
 
-const CATEGORIES = [
+interface Category {
+  value: string;
+  label: string;
+  color: string;
+}
+
+const DEFAULT_CATEGORIES: Category[] = [
   { value: "work", label: "업무", color: "bg-primary/10 text-primary" },
   { value: "study", label: "공부", color: "bg-accent/10 text-accent" },
   { value: "exercise", label: "운동", color: "bg-green-500/10 text-green-700 dark:text-green-400" },
@@ -25,10 +32,39 @@ const CATEGORIES = [
   { value: "other", label: "기타", color: "bg-muted text-muted-foreground" },
 ];
 
+const COLOR_OPTIONS = [
+  { value: "bg-primary/10 text-primary", label: "Primary" },
+  { value: "bg-accent/10 text-accent", label: "Accent" },
+  { value: "bg-green-500/10 text-green-700 dark:text-green-400", label: "Green" },
+  { value: "bg-blue-500/10 text-blue-700 dark:text-blue-400", label: "Blue" },
+  { value: "bg-orange-500/10 text-orange-700 dark:text-orange-400", label: "Orange" },
+  { value: "bg-purple-500/10 text-purple-700 dark:text-purple-400", label: "Purple" },
+  { value: "bg-pink-500/10 text-pink-700 dark:text-pink-400", label: "Pink" },
+  { value: "bg-red-500/10 text-red-700 dark:text-red-400", label: "Red" },
+];
+
+// 15분 단위 시간 옵션 생성
+const generateTimeOptions = () => {
+  const times: string[] = [];
+  for (let hour = 0; hour < 24; hour++) {
+    for (let minute = 0; minute < 60; minute += 15) {
+      const timeString = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+      times.push(timeString);
+    }
+  }
+  return times;
+};
+
+const TIME_OPTIONS = generateTimeOptions();
+
 export const TimeEntry = () => {
   const [timeBlocks, setTimeBlocks] = useState<TimeBlock[]>([
     { id: "1", startTime: "09:00", endTime: "12:00", category: "work", activity: "" },
   ]);
+  const [categories, setCategories] = useState<Category[]>(DEFAULT_CATEGORIES);
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [newCategoryLabel, setNewCategoryLabel] = useState("");
+  const [newCategoryColor, setNewCategoryColor] = useState(COLOR_OPTIONS[0].value);
 
   const addTimeBlock = () => {
     const lastBlock = timeBlocks[timeBlocks.length - 1];
@@ -66,18 +102,122 @@ export const TimeEntry = () => {
   };
 
   const getCategoryLabel = (value: string) => {
-    return CATEGORIES.find((cat) => cat.value === value)?.label || value;
+    return categories.find((cat) => cat.value === value)?.label || value;
   };
 
   const getCategoryColor = (value: string) => {
-    return CATEGORIES.find((cat) => cat.value === value)?.color || "";
+    return categories.find((cat) => cat.value === value)?.color || "";
+  };
+
+  const addCategory = () => {
+    if (!newCategoryLabel.trim()) return;
+    const newCategory: Category = {
+      value: newCategoryLabel.toLowerCase().replace(/\s+/g, '_'),
+      label: newCategoryLabel,
+      color: newCategoryColor,
+    };
+    setCategories([...categories, newCategory]);
+    setNewCategoryLabel("");
+    setNewCategoryColor(COLOR_OPTIONS[0].value);
+  };
+
+  const updateCategory = (oldValue: string, newLabel: string, newColor: string) => {
+    setCategories(categories.map(cat => 
+      cat.value === oldValue 
+        ? { ...cat, label: newLabel, color: newColor }
+        : cat
+    ));
+  };
+
+  const deleteCategory = (value: string) => {
+    setCategories(categories.filter(cat => cat.value !== value));
   };
 
   return (
     <Card className="shadow-[var(--shadow-card)] border-border/50">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-foreground">
-          오늘의 시간 기록
+        <CardTitle className="flex items-center justify-between text-foreground">
+          <span>오늘의 시간 기록</span>
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="outline" size="sm" className="gap-2">
+                <Settings className="h-4 w-4" />
+                카테고리 관리
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>카테고리 관리</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div className="space-y-3">
+                  <h4 className="text-sm font-medium">기존 카테고리</h4>
+                  {categories.map((cat) => (
+                    <div key={cat.value} className="flex items-center gap-2 p-3 border border-border rounded-lg">
+                      <span className={`px-3 py-1 rounded-md text-sm font-medium ${cat.color} flex-1`}>
+                        {cat.label}
+                      </span>
+                      <Select
+                        value={cat.color}
+                        onValueChange={(color) => updateCategory(cat.value, cat.label, color)}
+                      >
+                        <SelectTrigger className="w-32">
+                          <Palette className="h-4 w-4" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {COLOR_OPTIONS.map((option) => (
+                            <SelectItem key={option.value} value={option.value}>
+                              <span className={`px-2 py-1 rounded-md text-xs ${option.value}`}>
+                                {option.label}
+                              </span>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => deleteCategory(cat.value)}
+                        className="text-destructive hover:bg-destructive/10"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="border-t border-border pt-4">
+                  <h4 className="text-sm font-medium mb-3">새 카테고리 추가</h4>
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="카테고리 이름"
+                      value={newCategoryLabel}
+                      onChange={(e) => setNewCategoryLabel(e.target.value)}
+                      className="flex-1"
+                    />
+                    <Select value={newCategoryColor} onValueChange={setNewCategoryColor}>
+                      <SelectTrigger className="w-32">
+                        <Palette className="h-4 w-4" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {COLOR_OPTIONS.map((option) => (
+                          <SelectItem key={option.value} value={option.value}>
+                            <span className={`px-2 py-1 rounded-md text-xs ${option.value}`}>
+                              {option.label}
+                            </span>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Button onClick={addCategory}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      추가
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -107,25 +247,41 @@ export const TimeEntry = () => {
                 <Label htmlFor={`start-${block.id}`} className="text-sm text-foreground/80">
                   시작 시간
                 </Label>
-                <Input
-                  id={`start-${block.id}`}
-                  type="time"
+                <Select
                   value={block.startTime}
-                  onChange={(e) => updateTimeBlock(block.id, "startTime", e.target.value)}
-                  className="mt-1"
-                />
+                  onValueChange={(value) => updateTimeBlock(block.id, "startTime", value)}
+                >
+                  <SelectTrigger id={`start-${block.id}`} className="mt-1">
+                    <SelectValue placeholder="시작 시간 선택" />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-[200px]">
+                    {TIME_OPTIONS.map((time) => (
+                      <SelectItem key={time} value={time}>
+                        {time}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div>
                 <Label htmlFor={`end-${block.id}`} className="text-sm text-foreground/80">
                   종료 시간
                 </Label>
-                <Input
-                  id={`end-${block.id}`}
-                  type="time"
+                <Select
                   value={block.endTime}
-                  onChange={(e) => updateTimeBlock(block.id, "endTime", e.target.value)}
-                  className="mt-1"
-                />
+                  onValueChange={(value) => updateTimeBlock(block.id, "endTime", value)}
+                >
+                  <SelectTrigger id={`end-${block.id}`} className="mt-1">
+                    <SelectValue placeholder="종료 시간 선택" />
+                  </SelectTrigger>
+                  <SelectContent className="max-h-[200px]">
+                    {TIME_OPTIONS.map((time) => (
+                      <SelectItem key={time} value={time}>
+                        {time}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
@@ -141,7 +297,7 @@ export const TimeEntry = () => {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {CATEGORIES.map((cat) => (
+                  {categories.map((cat) => (
                     <SelectItem key={cat.value} value={cat.value}>
                       <span className={`px-2 py-1 rounded-md ${cat.color}`}>
                         {cat.label}
