@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, Trash2, Settings, Palette, X } from "lucide-react";
+import { Plus, Trash2, Settings, Palette } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -424,36 +424,104 @@ export const TimeEntry = () => {
                     <div
                       key={block.id}
                       className={`absolute left-0 right-0 mx-1 rounded border-2 cursor-pointer transition-all ${color} ${
-                        isSelected ? 'ring-2 ring-primary z-10' : 'hover:ring-2 hover:ring-primary/50'
+                        isSelected ? 'ring-2 ring-primary z-10 scale-[1.02]' : 'hover:ring-2 hover:ring-primary/50'
                       }`}
                       style={style}
-                      onClick={() => setSelectedBlock(block.id)}
+                      onClick={() => setSelectedBlock(isSelected ? null : block.id)}
                     >
-                      <div className="p-2 text-xs font-medium">
-                        <div className="flex items-center justify-between">
-                          <span>{getCategoryLabel(block.category)}</span>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-4 w-4 p-0 hover:bg-destructive/20"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              removeTimeBlock(block.id);
-                              if (selectedBlock === block.id) setSelectedBlock(null);
-                            }}
-                          >
-                            <X className="h-3 w-3" />
-                          </Button>
-                        </div>
-                        <div className="text-[10px] opacity-80">
-                          {block.startTime} - {block.endTime}
-                        </div>
-                        {block.activity && (
-                          <div className="text-[10px] mt-1 opacity-70 line-clamp-2">
-                            {block.activity}
+                      {isSelected ? (
+                        <div className="p-2 space-y-2">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-xs font-semibold">편집 중</span>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-4 w-4 p-0 hover:bg-destructive/20"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                removeTimeBlock(block.id);
+                                setSelectedBlock(null);
+                              }}
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
                           </div>
-                        )}
-                      </div>
+                          
+                          <div className="grid grid-cols-2 gap-1">
+                            <Select
+                              value={block.startTime}
+                              onValueChange={(value) => updateTimeBlock(block.id, "startTime", value)}
+                            >
+                              <SelectTrigger className="h-7 text-[10px]">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent className="max-h-48">
+                                {TIME_OPTIONS.map((time) => (
+                                  <SelectItem key={time} value={time} className="text-xs">
+                                    {time}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            
+                            <Select
+                              value={block.endTime}
+                              onValueChange={(value) => updateTimeBlock(block.id, "endTime", value)}
+                            >
+                              <SelectTrigger className="h-7 text-[10px]">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent className="max-h-48">
+                                {TIME_OPTIONS.map((time) => (
+                                  <SelectItem key={time} value={time} className="text-xs">
+                                    {time}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          
+                          <Select
+                            value={block.category}
+                            onValueChange={(value) => updateTimeBlock(block.id, "category", value)}
+                          >
+                            <SelectTrigger className="h-7 text-[10px]">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {categories.map((cat) => (
+                                <SelectItem key={cat.value} value={cat.value}>
+                                  <span className={`px-2 py-0.5 rounded-md text-[10px] ${cat.color}`}>
+                                    {cat.label}
+                                  </span>
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          
+                          <Textarea
+                            placeholder="활동 내용"
+                            value={block.activity}
+                            onChange={(e) => updateTimeBlock(block.id, "activity", e.target.value)}
+                            className="min-h-12 text-[10px] p-1.5"
+                            onClick={(e) => e.stopPropagation()}
+                          />
+                        </div>
+                      ) : (
+                        <div className="p-2 text-xs font-medium">
+                          <div className="flex items-center justify-between">
+                            <span>{getCategoryLabel(block.category)}</span>
+                          </div>
+                          <div className="text-[10px] opacity-80">
+                            {block.startTime} - {block.endTime}
+                          </div>
+                          {block.activity && (
+                            <div className="text-[10px] mt-1 opacity-70 line-clamp-2">
+                              {block.activity}
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   );
                 })}
@@ -462,98 +530,9 @@ export const TimeEntry = () => {
           </div>
           
           <p className="text-xs text-muted-foreground mt-2 text-center">
-            드래그하여 시간 블록을 추가하세요
+            💡 드래그하여 시간 블록 추가 • 블록 클릭하여 편집 • 변경사항은 자동 저장됩니다
           </p>
         </div>
-
-        {selectedBlock && timeBlocks.find(b => b.id === selectedBlock) && (
-          <div className="p-4 border border-primary/50 rounded-lg bg-card space-y-3">
-            <div className="flex items-center justify-between">
-              <h4 className="font-semibold text-sm">선택한 블록 편집</h4>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setSelectedBlock(null)}
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-            {(() => {
-              const block = timeBlocks.find(b => b.id === selectedBlock)!;
-              return (
-                <>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="text-xs text-muted-foreground">시작</label>
-                      <Select
-                        value={block.startTime}
-                        onValueChange={(value) => updateTimeBlock(block.id, "startTime", value)}
-                      >
-                        <SelectTrigger className="h-8 text-xs">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className="max-h-[200px]">
-                          {TIME_OPTIONS.map((time) => (
-                            <SelectItem key={time} value={time} className="text-xs">
-                              {time}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <label className="text-xs text-muted-foreground">종료</label>
-                      <Select
-                        value={block.endTime}
-                        onValueChange={(value) => updateTimeBlock(block.id, "endTime", value)}
-                      >
-                        <SelectTrigger className="h-8 text-xs">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent className="max-h-[200px]">
-                          {TIME_OPTIONS.filter((time) => time > block.startTime).map((time) => (
-                            <SelectItem key={time} value={time} className="text-xs">
-                              {time}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  <div>
-                    <label className="text-xs text-muted-foreground">카테고리</label>
-                    <Select
-                      value={block.category}
-                      onValueChange={(value) => updateTimeBlock(block.id, "category", value)}
-                    >
-                      <SelectTrigger className="h-8 text-xs">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {categories.map((cat) => (
-                          <SelectItem key={cat.value} value={cat.value}>
-                            <span className={`px-2 py-1 rounded-md text-xs ${cat.color}`}>
-                              {cat.label}
-                            </span>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <label className="text-xs text-muted-foreground">활동 내용</label>
-                    <Textarea
-                      value={block.activity}
-                      onChange={(e) => updateTimeBlock(block.id, "activity", e.target.value)}
-                      placeholder="활동 내용을 입력하세요"
-                      className="min-h-[60px] text-xs"
-                    />
-                  </div>
-                </>
-              );
-            })()}
-          </div>
-        )}
       </CardContent>
     </Card>
   );

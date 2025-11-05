@@ -5,8 +5,8 @@ import { TimeEntry } from "@/components/TimeEntry";
 import { DailyReflection } from "@/components/DailyReflection";
 import { WeeklyStats } from "@/components/WeeklyStats";
 import { MonthlyStats } from "@/components/MonthlyStats";
-import { GoogleSheetsSync } from "@/components/GoogleSheetsSync";
 import { TodayAnalysis } from "@/components/TodayAnalysis";
+import { useGoogleSheetsSync } from "@/hooks/useGoogleSheetsSync";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Clock, Target, CalendarDays, TrendingUp, LogOut } from "lucide-react";
@@ -17,6 +17,9 @@ const Index = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  
+  // Enable background Google Sheets sync
+  useGoogleSheetsSync();
 
   const today = new Date().toLocaleDateString("ko-KR", {
     year: "numeric",
@@ -127,12 +130,11 @@ const Index = () => {
             <div className="grid lg:grid-cols-2 gap-6">
               <div className="space-y-6">
                 <TimeEntry />
-                <DailyReflection />
               </div>
               
               <div className="space-y-6">
                 <TodayAnalysis />
-                <GoogleSheetsSync />
+                <DailyReflection />
                 
                 <div className="p-6 rounded-xl bg-gradient-to-br from-accent/10 to-accent/5 border border-accent/20">
                   <h3 className="font-semibold text-accent mb-3 flex items-center gap-2">
