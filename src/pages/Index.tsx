@@ -2,6 +2,7 @@ import { TimeEntry } from "@/components/TimeEntry";
 import { DailyReflection } from "@/components/DailyReflection";
 import { WeeklyStats } from "@/components/WeeklyStats";
 import { MonthlyStats } from "@/components/MonthlyStats";
+import { GoogleSheetsSync } from "@/components/GoogleSheetsSync";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Clock, Target, CalendarDays, TrendingUp } from "lucide-react";
 
@@ -58,6 +59,8 @@ const Index = () => {
               </div>
               
               <div className="space-y-6">
+                <GoogleSheetsSync />
+                
                 <div className="p-6 rounded-xl bg-gradient-to-br from-accent/10 to-accent/5 border border-accent/20">
                   <h3 className="font-semibold text-accent mb-3 flex items-center gap-2">
                     <Target className="h-4 w-4" />
