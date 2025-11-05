@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -57,14 +57,38 @@ const generateTimeOptions = () => {
 
 const TIME_OPTIONS = generateTimeOptions();
 
+export interface TimeBlockExport extends TimeBlock {
+  date: string;
+}
+
 export const TimeEntry = () => {
-  const [timeBlocks, setTimeBlocks] = useState<TimeBlock[]>([
-    { id: "1", startTime: "09:00", endTime: "12:00", category: "work", activity: "" },
-  ]);
-  const [categories, setCategories] = useState<Category[]>(DEFAULT_CATEGORIES);
+  const today = new Date().toISOString().split('T')[0];
+  
+  const [timeBlocks, setTimeBlocks] = useState<TimeBlock[]>(() => {
+    const saved = localStorage.getItem(`timeBlocks-${today}`);
+    return saved ? JSON.parse(saved) : [
+      { id: "1", startTime: "09:00", endTime: "12:00", category: "work", activity: "" },
+    ];
+  });
+  
+  const [categories, setCategories] = useState<Category[]>(() => {
+    const saved = localStorage.getItem('categories');
+    return saved ? JSON.parse(saved) : DEFAULT_CATEGORIES;
+  });
+  
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [newCategoryLabel, setNewCategoryLabel] = useState("");
   const [newCategoryColor, setNewCategoryColor] = useState(COLOR_OPTIONS[0].value);
+
+  // Save timeBlocks to localStorage
+  useEffect(() => {
+    localStorage.setItem(`timeBlocks-${today}`, JSON.stringify(timeBlocks));
+  }, [timeBlocks, today]);
+
+  // Save categories to localStorage
+  useEffect(() => {
+    localStorage.setItem('categories', JSON.stringify(categories));
+  }, [categories]);
 
   const addTimeBlock = () => {
     const lastBlock = timeBlocks[timeBlocks.length - 1];
@@ -83,9 +107,17 @@ export const TimeEntry = () => {
   };
 
   const updateTimeBlock = (id: string, field: keyof TimeBlock, value: string) => {
-    setTimeBlocks(
-      timeBlocks.map((block) => (block.id === id ? { ...block, [field]: value } : block))
+    const updatedBlocks = timeBlocks.map((block) => 
+      block.id === id ? { ...block, [field]: value } : block
     );
+    
+    // Sort by start time
+    updatedBlocks.sort((a, b) => {
+      if (!a.startTime || !b.startTime) return 0;
+      return a.startTime.localeCompare(b.startTime);
+    });
+    
+    setTimeBlocks(updatedBlocks);
   };
 
   const calculateDuration = (start: string, end: string) => {
@@ -275,7 +307,10 @@ export const TimeEntry = () => {
                     <SelectValue placeholder="종료 시간 선택" />
                   </SelectTrigger>
                   <SelectContent className="max-h-[200px]">
-                    {TIME_OPTIONS.map((time) => (
+                    {TIME_OPTIONS.filter((time) => {
+                      if (!block.startTime) return true;
+                      return time > block.startTime;
+                    }).map((time) => (
                       <SelectItem key={time} value={time}>
                         {time}
                       </SelectItem>

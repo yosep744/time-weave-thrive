@@ -1,22 +1,65 @@
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, PieChart, Pie, Cell } from "recharts";
 import { Calendar, TrendingUp } from "lucide-react";
+import { getTimeBlocksForDateRange, getCategoryStats, getCategories } from "@/lib/timeBlockStorage";
 
-const monthlyData = [
-  { week: "1주차", 업무: 25, 학습: 18, 운동: 5, 기타: 8 },
-  { week: "2주차", 업무: 28, 학습: 15, 운동: 6, 기타: 7 },
-  { week: "3주차", 업무: 30, 학습: 20, 운동: 4, 기타: 6 },
-  { week: "4주차", 업무: 27, 학습: 22, 운동: 7, 기타: 5 },
-];
-
-const categoryTotal = [
-  { name: "업무", value: 110, color: "hsl(var(--primary))" },
-  { name: "학습", value: 75, color: "hsl(var(--accent))" },
-  { name: "운동", value: 22, color: "hsl(var(--chart-2))" },
-  { name: "기타", value: 26, color: "hsl(var(--muted))" },
-];
+const CATEGORY_COLORS: Record<string, string> = {
+  work: "hsl(var(--primary))",
+  study: "hsl(var(--accent))",
+  exercise: "hsl(142, 76%, 36%)",
+  meal: "hsl(24, 70%, 50%)",
+  rest: "hsl(271, 76%, 53%)",
+  other: "hsl(var(--muted))",
+};
 
 export const MonthlyStats = () => {
+  const [weeklyData, setWeeklyData] = useState<any[]>([]);
+  const [categoryTotal, setCategoryTotal] = useState<any[]>([]);
+  
+  useEffect(() => {
+    const endDate = new Date();
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - 27); // Last 4 weeks
+    
+    const categories = getCategories();
+    
+    // Calculate weekly data
+    const weeks: any[] = [];
+    for (let i = 0; i < 4; i++) {
+      const weekEnd = new Date(endDate);
+      weekEnd.setDate(weekEnd.getDate() - (i * 7));
+      const weekStart = new Date(weekEnd);
+      weekStart.setDate(weekStart.getDate() - 6);
+      
+      const blocks = getTimeBlocksForDateRange(weekStart, weekEnd);
+      const stats = getCategoryStats(blocks);
+      
+      const weekData: any = { week: `${4 - i}주차` };
+      Object.entries(stats).forEach(([category, hours]) => {
+        const categoryInfo = categories.find((c: any) => c.value === category);
+        weekData[categoryInfo?.label || category] = Math.round(hours * 10) / 10;
+      });
+      
+      weeks.unshift(weekData);
+    }
+    setWeeklyData(weeks);
+    
+    // Calculate category totals
+    const allBlocks = getTimeBlocksForDateRange(startDate, endDate);
+    const totalStats = getCategoryStats(allBlocks);
+    
+    const totals = Object.entries(totalStats).map(([category, hours]) => {
+      const categoryInfo = categories.find((c: any) => c.value === category);
+      return {
+        name: categoryInfo?.label || category,
+        value: Math.round(hours * 10) / 10,
+        color: CATEGORY_COLORS[category] || "hsl(var(--muted))",
+      };
+    });
+    setCategoryTotal(totals);
+  }, []);
+  
   const totalHours = categoryTotal.reduce((sum, cat) => sum + cat.value, 0);
 
   return (
@@ -30,25 +73,38 @@ export const MonthlyStats = () => {
           <CardDescription>이번 달 주차별 시간 사용 현황</CardDescription>
         </CardHeader>
         <CardContent>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={monthlyData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
-              <XAxis dataKey="week" stroke="hsl(var(--muted-foreground))" />
-              <YAxis stroke="hsl(var(--muted-foreground))" />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: "hsl(var(--card))",
-                  border: "1px solid hsl(var(--border))",
-                  borderRadius: "8px",
-                }}
-              />
-              <Legend />
-              <Bar dataKey="업무" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="학습" fill="hsl(var(--accent))" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="운동" fill="hsl(var(--chart-2))" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="기타" fill="hsl(var(--muted))" radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
+          {weeklyData.length === 0 || weeklyData.every(w => Object.keys(w).length === 1) ? (
+            <div className="text-center py-12 text-muted-foreground">
+              <Calendar className="h-12 w-12 mx-auto mb-3 opacity-50" />
+              <p>아직 기록된 데이터가 없습니다.</p>
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={weeklyData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
+                <XAxis dataKey="week" stroke="hsl(var(--muted-foreground))" />
+                <YAxis stroke="hsl(var(--muted-foreground))" />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "hsl(var(--card))",
+                    border: "1px solid hsl(var(--border))",
+                    borderRadius: "8px",
+                  }}
+                />
+                <Legend />
+                {Object.keys(weeklyData[0] || {})
+                  .filter(key => key !== 'week')
+                  .map((key, index) => (
+                    <Bar 
+                      key={key} 
+                      dataKey={key} 
+                      fill={Object.values(CATEGORY_COLORS)[index] || "hsl(var(--muted))"} 
+                      radius={[4, 4, 0, 0]} 
+                    />
+                  ))}
+              </BarChart>
+            </ResponsiveContainer>
+          )}
         </CardContent>
       </Card>
 
@@ -61,35 +117,41 @@ export const MonthlyStats = () => {
           <CardDescription>총 {totalHours}시간 기록됨</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid md:grid-cols-2 gap-6">
-            <ResponsiveContainer width="100%" height={250}>
-              <PieChart>
-                <Pie
-                  data={categoryTotal}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="value"
-                >
-                  {categoryTotal.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "hsl(var(--card))",
-                    border: "1px solid hsl(var(--border))",
-                    borderRadius: "8px",
-                  }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
+          {categoryTotal.length === 0 ? (
+            <div className="text-center py-12 text-muted-foreground">
+              <TrendingUp className="h-12 w-12 mx-auto mb-3 opacity-50" />
+              <p>아직 기록된 데이터가 없습니다.</p>
+            </div>
+          ) : (
+            <div className="grid md:grid-cols-2 gap-6">
+              <ResponsiveContainer width="100%" height={250}>
+                <PieChart>
+                  <Pie
+                    data={categoryTotal}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="value"
+                  >
+                    {categoryTotal.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "hsl(var(--card))",
+                      border: "1px solid hsl(var(--border))",
+                      borderRadius: "8px",
+                    }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
 
-            <div className="space-y-4">
-              {categoryTotal.map((category) => (
+              <div className="space-y-4">
+                {categoryTotal.map((category) => (
                 <div key={category.name} className="space-y-2">
                   <div className="flex items-center justify-between text-sm">
                     <span className="font-medium">{category.name}</span>
@@ -108,8 +170,9 @@ export const MonthlyStats = () => {
                   </div>
                 </div>
               ))}
+              </div>
             </div>
-          </div>
+          )}
         </CardContent>
       </Card>
     </div>
