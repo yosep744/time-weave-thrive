@@ -143,7 +143,7 @@ export const saveCategories = async (categories: any[]) => {
     .delete()
     .eq('user_id', user.id);
 
-  // Insert new categories
+  // Insert new categories with upsert to avoid duplicates
   if (categories.length > 0) {
     const categoriesToInsert = categories.map(cat => ({
       value: cat.value,
@@ -154,6 +154,9 @@ export const saveCategories = async (categories: any[]) => {
 
     await supabase
       .from('categories')
-      .insert(categoriesToInsert);
+      .upsert(categoriesToInsert, { 
+        onConflict: 'value,user_id',
+        ignoreDuplicates: false 
+      });
   }
 };

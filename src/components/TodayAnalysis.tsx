@@ -1,10 +1,12 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Cell } from "recharts";
-import { TrendingUp, Clock } from "lucide-react";
+import { TrendingUp, Clock, BarChart3 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { getTimeBlock, getCategories } from "@/lib/timeBlockStorage";
 import type { TimeBlockExport } from "@/components/TimeEntry";
+import { toast } from "sonner";
 
 interface CategoryStat {
   label: string;
@@ -16,14 +18,23 @@ interface CategoryStat {
 export const TodayAnalysis = () => {
   const [stats, setStats] = useState<CategoryStat[]>([]);
   const [totalHours, setTotalHours] = useState(0);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const today = new Date().toISOString().split('T')[0];
 
-  useEffect(() => {
-    const loadStats = async () => {
+  const analyzeTime = async () => {
+    setIsAnalyzing(true);
+    try {
       const [blocks, categories] = await Promise.all([
         getTimeBlock(today),
         getCategories()
       ]);
+
+      if (blocks.length === 0) {
+        toast.error("분석할 시간 블록이 없습니다");
+        setStats([]);
+        setTotalHours(0);
+        return;
+      }
 
       // Calculate category stats
       const categoryMap = new Map<string, number>();
@@ -57,14 +68,14 @@ export const TodayAnalysis = () => {
         .sort((a, b) => b.hours - a.hours);
 
       setStats(categoryStats);
-    };
-
-    loadStats();
-
-    // Refresh every 10 seconds for real-time updates
-    const interval = setInterval(loadStats, 10000);
-    return () => clearInterval(interval);
-  }, [today]);
+      toast.success("시간 분석이 완료되었습니다");
+    } catch (error) {
+      console.error('Error analyzing time:', error);
+      toast.error("분석 중 오류가 발생했습니다");
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
 
   // Convert color classes to hex for charts
   const getColorHex = (colorClass: string): string => {
@@ -92,9 +103,18 @@ export const TodayAnalysis = () => {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-muted-foreground text-center py-8">
-            시간 블록을 추가하면 실시간 분석이 표시됩니다
+          <p className="text-sm text-muted-foreground text-center py-4 mb-4">
+            시간 블록을 추가한 후 분석 버튼을 클릭하세요
           </p>
+          <Button 
+            onClick={analyzeTime} 
+            disabled={isAnalyzing}
+            className="w-full gap-2"
+            variant="gradient"
+          >
+            <BarChart3 className="h-4 w-4" />
+            {isAnalyzing ? "분석 중..." : "시간 분석하기"}
+          </Button>
         </CardContent>
       </Card>
     );
@@ -155,9 +175,16 @@ export const TodayAnalysis = () => {
         </div>
 
         <div className="pt-4 border-t border-border">
-          <p className="text-xs text-muted-foreground text-center">
-            실시간으로 업데이트되는 시간 사용 분석입니다
-          </p>
+          <Button 
+            onClick={analyzeTime} 
+            disabled={isAnalyzing}
+            className="w-full gap-2"
+            variant="outline"
+            size="sm"
+          >
+            <BarChart3 className="h-4 w-4" />
+            {isAnalyzing ? "분석 중..." : "다시 분석하기"}
+          </Button>
         </div>
       </CardContent>
     </Card>

@@ -233,16 +233,23 @@ export const TimeEntry = () => {
     return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
   };
 
+  const handleTimeSlotClick = (hour: number) => {
+    const newBlock: TimeBlock = {
+      id: Date.now().toString(),
+      startTime: `${String(hour).padStart(2, '0')}:00`,
+      endTime: `${String(hour + 1).padStart(2, '0')}:00`,
+      category: categories[0]?.value || "work",
+      activity: "",
+    };
+
+    setTimeBlocks([...timeBlocks, newBlock]);
+    setSelectedBlock(newBlock.id);
+    toast.success("새 시간 블록이 추가되었습니다");
+  };
+
   const handleTimelineMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!timelineRef.current || resizingBlock) return;
-    const rect = timelineRef.current.getBoundingClientRect();
-    const y = e.clientY - rect.top;
-    const minutes = Math.floor((y / rect.height) * (24 * 60));
-    const roundedMinutes = Math.round(minutes / 15) * 15;
-    
-    setIsDragging(true);
-    setDragStart(roundedMinutes);
-    setDragEnd(roundedMinutes);
+    // Disabled drag creation - using click instead
+    return;
   };
 
   const handleTimelineMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -281,13 +288,6 @@ export const TimeEntry = () => {
       }
       return;
     }
-    
-    if (!isDragging || !timelineRef.current) return;
-    const rect = timelineRef.current.getBoundingClientRect();
-    const y = e.clientY - rect.top;
-    const minutes = Math.floor((y / rect.height) * (24 * 60));
-    const roundedMinutes = Math.round(minutes / 15) * 15;
-    setDragEnd(roundedMinutes);
   };
 
   const handleTimelineMouseUp = () => {
@@ -298,34 +298,6 @@ export const TimeEntry = () => {
       setResizeStartTime(null);
       return;
     }
-    
-    if (!isDragging || dragStart === null || dragEnd === null) {
-      setIsDragging(false);
-      return;
-    }
-
-    const startMin = Math.min(dragStart, dragEnd);
-    const endMin = Math.max(dragStart, dragEnd);
-    
-    if (endMin - startMin < 15) {
-      setIsDragging(false);
-      return;
-    }
-
-    const newBlock: TimeBlock = {
-      id: Date.now().toString(),
-      startTime: minutesToTime(startMin),
-      endTime: minutesToTime(endMin),
-      category: "work",
-      activity: "",
-    };
-    
-    setTimeBlocks([...timeBlocks, newBlock]);
-    setSelectedBlock(newBlock.id);
-    setIsDragging(false);
-    setDragStart(null);
-    setDragEnd(null);
-    toast.success("새 시간 블록이 추가되었습니다");
   };
 
   const handleBlockResizeStart = (e: React.MouseEvent, blockId: string, mode: ResizeMode) => {
@@ -446,7 +418,7 @@ export const TimeEntry = () => {
           <div className="flex gap-2 md:gap-4">
             <div className="w-12 md:w-16 flex-shrink-0">
               {Array.from({ length: 24 }, (_, i) => (
-                <div key={i} className="h-12 md:h-16 flex items-start justify-end pr-1 md:pr-2 text-[10px] md:text-xs text-muted-foreground font-medium">
+                <div key={i} className="h-20 flex items-start justify-end pr-1 md:pr-2 text-[10px] md:text-xs text-muted-foreground font-medium">
                   {i.toString().padStart(2, '0')}:00
                 </div>
               ))}
@@ -455,33 +427,43 @@ export const TimeEntry = () => {
             <div className="flex-1 relative min-w-0">
               <div
                 ref={timelineRef}
-                className="relative border border-border rounded-lg bg-card cursor-crosshair"
-                style={{ height: '1152px' }}
-                onMouseDown={handleTimelineMouseDown}
+                className="relative border border-border rounded-lg bg-card"
+                style={{ height: '1920px' }}
                 onMouseMove={handleTimelineMouseMove}
                 onMouseUp={handleTimelineMouseUp}
                 onMouseLeave={() => {
-                  if (isDragging) handleTimelineMouseUp();
                   if (resizingBlock) handleTimelineMouseUp();
                 }}
               >
-                {Array.from({ length: 24 }, (_, i) => (
-                  <div
-                    key={i}
-                    className="absolute w-full border-t border-border/30"
-                    style={{ top: `${(i / 24) * 100}%` }}
-                  />
-                ))}
+                {Array.from({ length: 24 }, (_, hour) => {
+                  const blockInSlot = timeBlocks.find(
+                    (b) =>
+                      parseInt(b.startTime.split(":")[0]) <= hour &&
+                      parseInt(b.endTime.split(":")[0]) > hour
+                  );
 
-                {isDragging && dragStart !== null && dragEnd !== null && (
-                  <div
-                    className="absolute left-0 right-0 bg-primary/30 border-2 border-primary rounded pointer-events-none"
-                    style={{
-                      top: `${(Math.min(dragStart, dragEnd) / (24 * 60)) * 100}%`,
-                      height: `${(Math.abs(dragEnd - dragStart) / (24 * 60)) * 100}%`,
-                    }}
-                  />
-                )}
+                  return (
+                    <div
+                      key={hour}
+                      className={`absolute w-full border-t border-border/30 h-20 ${!blockInSlot ? 'hover:bg-primary/5 cursor-pointer' : ''}`}
+                      style={{ top: `${(hour / 24) * 100}%` }}
+                      onClick={() => !blockInSlot && handleTimeSlotClick(hour)}
+                      onTouchEnd={(e) => {
+                        if (!blockInSlot) {
+                          e.preventDefault();
+                          handleTimeSlotClick(hour);
+                        }
+                      }}
+                    >
+                      {!blockInSlot && (
+                        <div className="opacity-0 hover:opacity-100 transition-opacity text-xs text-muted-foreground p-2">
+                          클릭하여 추가
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+
 
                 {timeBlocks.map((block) => {
                   const style = getBlockStyle(block);
@@ -516,8 +498,8 @@ export const TimeEntry = () => {
                         onMouseDown={(e) => handleBlockResizeStart(e, block.id, 'move')}
                       >
                         {isSelected ? (
-                          <div className="p-1.5 md:p-2 space-y-1.5 md:space-y-2 h-full">
-                            <div className="flex items-center justify-between">
+                          <div className="p-1.5 md:p-2 space-y-2 md:space-y-2.5 h-full">
+                            <div className="flex items-center justify-between mb-1">
                               <div className="flex items-center gap-1">
                                 <GripVertical className="h-3 md:h-4 w-3 md:w-4 opacity-50" />
                                 <span className="text-xs md:text-sm font-semibold">편집 중</span>
