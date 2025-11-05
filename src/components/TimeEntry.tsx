@@ -386,7 +386,7 @@ export const TimeEntry = () => {
           <div className="flex gap-2 md:gap-4">
             <div className="w-12 md:w-16 flex-shrink-0">
               {Array.from({ length: 24 }, (_, i) => (
-                <div key={i} className="h-20 flex items-start justify-end pr-1 md:pr-2 text-[10px] md:text-xs text-muted-foreground font-medium">
+                <div key={i} className="h-[25px] flex items-start justify-end pr-1 md:pr-2 text-[10px] md:text-xs text-muted-foreground font-medium">
                   {i.toString().padStart(2, '0')}:00
                 </div>
               ))}
@@ -396,7 +396,7 @@ export const TimeEntry = () => {
               <div
                 ref={timelineRef}
                 className="relative border border-border rounded-lg bg-card"
-                style={{ height: '1920px' }}
+                style={{ height: '600px' }}
                 onMouseMove={handleTimelineMouseMove}
                 onMouseUp={handleTimelineMouseUp}
                 onMouseLeave={() => {
@@ -413,7 +413,7 @@ export const TimeEntry = () => {
                   return (
                     <div
                       key={hour}
-                      className={`absolute w-full border-t border-border/30 h-20 ${!blockInSlot ? 'hover:bg-primary/5 cursor-pointer' : ''}`}
+                      className={`absolute w-full border-t border-border/30 h-[25px] ${!blockInSlot ? 'hover:bg-primary/5 cursor-pointer' : ''}`}
                       style={{ top: `${(hour / 24) * 100}%` }}
                       onClick={() => !blockInSlot && handleTimeSlotClick(hour)}
                       onTouchEnd={(e) => {
