@@ -6,6 +6,7 @@ import { DailyReflection } from "@/components/DailyReflection";
 import { WeeklyStats } from "@/components/WeeklyStats";
 import { MonthlyStats } from "@/components/MonthlyStats";
 import { GoogleSheetsSync } from "@/components/GoogleSheetsSync";
+import { TodayAnalysis } from "@/components/TodayAnalysis";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Clock, Target, CalendarDays, TrendingUp, LogOut } from "lucide-react";
@@ -130,6 +131,7 @@ const Index = () => {
               </div>
               
               <div className="space-y-6">
+                <TodayAnalysis />
                 <GoogleSheetsSync />
                 
                 <div className="p-6 rounded-xl bg-gradient-to-br from-accent/10 to-accent/5 border border-accent/20">

@@ -1,14 +1,13 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, Trash2, Clock, Settings, Palette } from "lucide-react";
+import { Plus, Trash2, Settings, Palette, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface TimeBlock {
   id: string;
@@ -44,7 +43,6 @@ const COLOR_OPTIONS = [
   { value: "bg-red-500/10 text-red-700 dark:text-red-400", label: "Red" },
 ];
 
-// 15분 단위 시간 옵션 생성
 const generateTimeOptions = () => {
   const times: string[] = [];
   for (let hour = 0; hour < 24; hour++) {
@@ -69,11 +67,15 @@ export const TimeEntry = () => {
   const [categories, setCategories] = useState<Category[]>(DEFAULT_CATEGORIES);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   
-  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [newCategoryLabel, setNewCategoryLabel] = useState("");
   const [newCategoryColor, setNewCategoryColor] = useState(COLOR_OPTIONS[0].value);
+  
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState<number | null>(null);
+  const [dragEnd, setDragEnd] = useState<number | null>(null);
+  const [selectedBlock, setSelectedBlock] = useState<string | null>(null);
+  const timelineRef = useRef<HTMLDivElement>(null);
 
-  // Load initial data from Supabase
   useEffect(() => {
     const loadData = async () => {
       const { getTimeBlock, getCategories } = await import('@/lib/timeBlockStorage');
@@ -84,17 +86,11 @@ export const TimeEntry = () => {
       
       if (blocks.length > 0) {
         setTimeBlocks(blocks);
-      } else {
-        // Only set default block if no data exists
-        setTimeBlocks([
-          { id: "1", startTime: "09:00", endTime: "12:00", category: "work", activity: "" }
-        ]);
       }
       
       if (cats.length > 0) {
         setCategories(cats);
       } else {
-        // Initialize with default categories if none exist
         const { saveCategories } = await import('@/lib/timeBlockStorage');
         await saveCategories(DEFAULT_CATEGORIES);
       }
@@ -105,7 +101,6 @@ export const TimeEntry = () => {
     loadData();
   }, [today]);
 
-  // Save timeBlocks to Supabase (skip initial load)
   useEffect(() => {
     if (isInitialLoad) return;
     
@@ -117,7 +112,6 @@ export const TimeEntry = () => {
     saveData();
   }, [timeBlocks, today, isInitialLoad]);
 
-  // Save categories to Supabase (skip initial load)
   useEffect(() => {
     if (isInitialLoad) return;
     
@@ -129,7 +123,6 @@ export const TimeEntry = () => {
     saveData();
   }, [categories, isInitialLoad]);
 
-  // Real-time sync from Supabase
   useEffect(() => {
     if (isInitialLoad) return;
     
@@ -143,14 +136,10 @@ export const TimeEntry = () => {
           table: 'time_blocks',
           filter: `date=eq.${today}`
         },
-        async (payload) => {
-          // Only update if change was from another client
-          console.log('Realtime update received:', payload);
+        async () => {
           const { getTimeBlock } = await import('@/lib/timeBlockStorage');
           const blocks = await getTimeBlock(today);
-          setTimeBlocks(blocks.length > 0 ? blocks : [
-            { id: "1", startTime: "09:00", endTime: "12:00", category: "work", activity: "" }
-          ]);
+          setTimeBlocks(blocks);
         }
       )
       .on(
@@ -161,7 +150,6 @@ export const TimeEntry = () => {
           table: 'categories'
         },
         async () => {
-          console.log('Categories updated');
           const { getCategories } = await import('@/lib/timeBlockStorage');
           const cats = await getCategories();
           if (cats.length > 0) {
@@ -176,18 +164,6 @@ export const TimeEntry = () => {
     };
   }, [today, isInitialLoad]);
 
-  const addTimeBlock = () => {
-    const lastBlock = timeBlocks[timeBlocks.length - 1];
-    const newBlock: TimeBlock = {
-      id: Date.now().toString(),
-      startTime: lastBlock?.endTime || "09:00",
-      endTime: "",
-      category: "work",
-      activity: "",
-    };
-    setTimeBlocks([...timeBlocks, newBlock]);
-  };
-
   const removeTimeBlock = (id: string) => {
     setTimeBlocks(timeBlocks.filter((block) => block.id !== id));
   };
@@ -197,26 +173,12 @@ export const TimeEntry = () => {
       block.id === id ? { ...block, [field]: value } : block
     );
     
-    // Sort by start time
     updatedBlocks.sort((a, b) => {
       if (!a.startTime || !b.startTime) return 0;
       return a.startTime.localeCompare(b.startTime);
     });
     
     setTimeBlocks(updatedBlocks);
-  };
-
-  const calculateDuration = (start: string, end: string) => {
-    if (!start || !end) return "-";
-    const [startHour, startMin] = start.split(":").map(Number);
-    const [endHour, endMin] = end.split(":").map(Number);
-    const startMinutes = startHour * 60 + startMin;
-    const endMinutes = endHour * 60 + endMin;
-    const duration = endMinutes - startMinutes;
-    if (duration < 0) return "-";
-    const hours = Math.floor(duration / 60);
-    const minutes = duration % 60;
-    return hours > 0 ? `${hours}시간 ${minutes}분` : `${minutes}분`;
   };
 
   const getCategoryLabel = (value: string) => {
@@ -249,6 +211,80 @@ export const TimeEntry = () => {
 
   const deleteCategory = (value: string) => {
     setCategories(categories.filter(cat => cat.value !== value));
+  };
+
+  const timeToMinutes = (time: string) => {
+    const [hours, minutes] = time.split(':').map(Number);
+    return hours * 60 + minutes;
+  };
+
+  const minutesToTime = (minutes: number) => {
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
+  };
+
+  const handleTimelineMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!timelineRef.current) return;
+    const rect = timelineRef.current.getBoundingClientRect();
+    const y = e.clientY - rect.top;
+    const minutes = Math.floor((y / rect.height) * (24 * 60));
+    const roundedMinutes = Math.round(minutes / 15) * 15;
+    
+    setIsDragging(true);
+    setDragStart(roundedMinutes);
+    setDragEnd(roundedMinutes);
+  };
+
+  const handleTimelineMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!isDragging || !timelineRef.current) return;
+    const rect = timelineRef.current.getBoundingClientRect();
+    const y = e.clientY - rect.top;
+    const minutes = Math.floor((y / rect.height) * (24 * 60));
+    const roundedMinutes = Math.round(minutes / 15) * 15;
+    setDragEnd(roundedMinutes);
+  };
+
+  const handleTimelineMouseUp = () => {
+    if (!isDragging || dragStart === null || dragEnd === null) {
+      setIsDragging(false);
+      return;
+    }
+
+    const startMin = Math.min(dragStart, dragEnd);
+    const endMin = Math.max(dragStart, dragEnd);
+    
+    if (endMin - startMin < 15) {
+      setIsDragging(false);
+      return;
+    }
+
+    const newBlock: TimeBlock = {
+      id: Date.now().toString(),
+      startTime: minutesToTime(startMin),
+      endTime: minutesToTime(endMin),
+      category: "work",
+      activity: "",
+    };
+    
+    setTimeBlocks([...timeBlocks, newBlock]);
+    setSelectedBlock(newBlock.id);
+    setIsDragging(false);
+    setDragStart(null);
+    setDragEnd(null);
+    toast.success("새 시간 블록이 추가되었습니다");
+  };
+
+  const getBlockStyle = (block: TimeBlock) => {
+    if (!block.startTime || !block.endTime) return {};
+    const start = timeToMinutes(block.startTime);
+    const end = timeToMinutes(block.endTime);
+    const totalMinutes = 24 * 60;
+    
+    return {
+      top: `${(start / totalMinutes) * 100}%`,
+      height: `${((end - start) / totalMinutes) * 100}%`,
+    };
   };
 
   return (
@@ -338,161 +374,184 @@ export const TimeEntry = () => {
           </Dialog>
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
-        {timeBlocks.map((block, index) => (
-          <div
-            key={block.id}
-            className="p-4 border border-border rounded-lg bg-card/50 space-y-3 transition-[var(--transition-smooth)] hover:shadow-[var(--shadow-soft)]"
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-muted-foreground">
-                시간 블록 {index + 1}
-              </span>
-              {timeBlocks.length > 1 && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => removeTimeBlock(block.id)}
-                  className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              )}
+      <CardContent className="space-y-6">
+        <div className="relative">
+          <div className="flex gap-4">
+            <div className="w-16 flex-shrink-0">
+              {Array.from({ length: 24 }, (_, i) => (
+                <div key={i} className="h-16 flex items-start justify-end pr-2 text-xs text-muted-foreground">
+                  {i.toString().padStart(2, '0')}:00
+                </div>
+              ))}
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label htmlFor={`start-${block.id}`} className="text-sm text-foreground/80">
-                  시작 시간
-                </Label>
-                <Select
-                  value={block.startTime}
-                  onValueChange={(value) => updateTimeBlock(block.id, "startTime", value)}
-                >
-                  <SelectTrigger id={`start-${block.id}`} className="mt-1">
-                    <SelectValue placeholder="시작 시간 선택" />
-                  </SelectTrigger>
-                  <SelectContent className="max-h-[200px]">
-                    {TIME_OPTIONS.map((time) => (
-                      <SelectItem key={time} value={time}>
-                        {time}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label htmlFor={`end-${block.id}`} className="text-sm text-foreground/80">
-                  종료 시간
-                </Label>
-                <Select
-                  value={block.endTime}
-                  onValueChange={(value) => updateTimeBlock(block.id, "endTime", value)}
-                >
-                  <SelectTrigger id={`end-${block.id}`} className="mt-1">
-                    <SelectValue placeholder="종료 시간 선택" />
-                  </SelectTrigger>
-                  <SelectContent className="max-h-[200px]">
-                    {TIME_OPTIONS.filter((time) => {
-                      if (!block.startTime) return true;
-                      return time > block.startTime;
-                    }).map((time) => (
-                      <SelectItem key={time} value={time}>
-                        {time}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div>
-              <Label htmlFor={`category-${block.id}`} className="text-sm text-foreground/80">
-                카테고리
-              </Label>
-              <Select
-                value={block.category}
-                onValueChange={(value) => updateTimeBlock(block.id, "category", value)}
+            <div className="flex-1 relative">
+              <div
+                ref={timelineRef}
+                className="relative border border-border rounded-lg bg-muted/20 cursor-crosshair"
+                style={{ height: '1536px' }}
+                onMouseDown={handleTimelineMouseDown}
+                onMouseMove={handleTimelineMouseMove}
+                onMouseUp={handleTimelineMouseUp}
+                onMouseLeave={() => {
+                  if (isDragging) handleTimelineMouseUp();
+                }}
               >
-                <SelectTrigger id={`category-${block.id}`} className="mt-1">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {categories.map((cat) => (
-                    <SelectItem key={cat.value} value={cat.value}>
-                      <span className={`px-2 py-1 rounded-md ${cat.color}`}>
-                        {cat.label}
-                      </span>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+                {Array.from({ length: 24 }, (_, i) => (
+                  <div
+                    key={i}
+                    className="absolute w-full border-t border-border/30"
+                    style={{ top: `${(i / 24) * 100}%` }}
+                  />
+                ))}
 
-            <div>
-              <Label htmlFor={`activity-${block.id}`} className="text-sm text-foreground/80">
-                활동 내용
-              </Label>
-              <Textarea
-                id={`activity-${block.id}`}
-                placeholder="예: AI에 대한 심도깊은 공부"
-                value={block.activity}
-                onChange={(e) => updateTimeBlock(block.id, "activity", e.target.value)}
-                className="mt-1 min-h-[60px]"
-              />
+                {isDragging && dragStart !== null && dragEnd !== null && (
+                  <div
+                    className="absolute left-0 right-0 bg-primary/30 border-2 border-primary rounded"
+                    style={{
+                      top: `${(Math.min(dragStart, dragEnd) / (24 * 60)) * 100}%`,
+                      height: `${(Math.abs(dragEnd - dragStart) / (24 * 60)) * 100}%`,
+                    }}
+                  />
+                )}
+
+                {timeBlocks.map((block) => {
+                  const style = getBlockStyle(block);
+                  const color = getCategoryColor(block.category);
+                  const isSelected = selectedBlock === block.id;
+                  
+                  return (
+                    <div
+                      key={block.id}
+                      className={`absolute left-0 right-0 mx-1 rounded border-2 cursor-pointer transition-all ${color} ${
+                        isSelected ? 'ring-2 ring-primary z-10' : 'hover:ring-2 hover:ring-primary/50'
+                      }`}
+                      style={style}
+                      onClick={() => setSelectedBlock(block.id)}
+                    >
+                      <div className="p-2 text-xs font-medium">
+                        <div className="flex items-center justify-between">
+                          <span>{getCategoryLabel(block.category)}</span>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-4 w-4 p-0 hover:bg-destructive/20"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              removeTimeBlock(block.id);
+                              if (selectedBlock === block.id) setSelectedBlock(null);
+                            }}
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </div>
+                        <div className="text-[10px] opacity-80">
+                          {block.startTime} - {block.endTime}
+                        </div>
+                        {block.activity && (
+                          <div className="text-[10px] mt-1 opacity-70 line-clamp-2">
+                            {block.activity}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </div>
-        ))}
+          
+          <p className="text-xs text-muted-foreground mt-2 text-center">
+            드래그하여 시간 블록을 추가하세요
+          </p>
+        </div>
 
-        <Button
-          onClick={addTimeBlock}
-          variant="outline"
-          className="w-full border-dashed border-2 hover:bg-primary/5 hover:border-primary transition-[var(--transition-smooth)]"
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          시간 블록 추가
-        </Button>
-
-        {timeBlocks.length > 0 && timeBlocks.some(block => block.startTime && block.endTime) && (
-          <div className="mt-6 pt-6 border-t border-border">
-            <div className="flex items-center gap-2 mb-4">
-              <Clock className="h-5 w-5 text-primary" />
-              <h3 className="text-lg font-semibold text-foreground">오늘의 시간 사용 내역</h3>
+        {selectedBlock && timeBlocks.find(b => b.id === selectedBlock) && (
+          <div className="p-4 border border-primary/50 rounded-lg bg-card space-y-3">
+            <div className="flex items-center justify-between">
+              <h4 className="font-semibold text-sm">선택한 블록 편집</h4>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setSelectedBlock(null)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
             </div>
-            <div className="rounded-lg border border-border overflow-hidden">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>시간</TableHead>
-                    <TableHead>카테고리</TableHead>
-                    <TableHead>활동</TableHead>
-                    <TableHead className="text-right">소요시간</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {timeBlocks
-                    .filter(block => block.startTime && block.endTime)
-                    .map((block) => (
-                      <TableRow key={block.id}>
-                        <TableCell className="font-medium">
-                          {block.startTime} - {block.endTime}
-                        </TableCell>
-                        <TableCell>
-                          <span className={`px-2 py-1 rounded-md text-xs font-medium ${getCategoryColor(block.category)}`}>
-                            {getCategoryLabel(block.category)}
-                          </span>
-                        </TableCell>
-                        <TableCell className="text-muted-foreground">
-                          {block.activity || "-"}
-                        </TableCell>
-                        <TableCell className="text-right font-medium">
-                          {calculateDuration(block.startTime, block.endTime)}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                </TableBody>
-              </Table>
-            </div>
+            {(() => {
+              const block = timeBlocks.find(b => b.id === selectedBlock)!;
+              return (
+                <>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-xs text-muted-foreground">시작</label>
+                      <Select
+                        value={block.startTime}
+                        onValueChange={(value) => updateTimeBlock(block.id, "startTime", value)}
+                      >
+                        <SelectTrigger className="h-8 text-xs">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="max-h-[200px]">
+                          {TIME_OPTIONS.map((time) => (
+                            <SelectItem key={time} value={time} className="text-xs">
+                              {time}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <label className="text-xs text-muted-foreground">종료</label>
+                      <Select
+                        value={block.endTime}
+                        onValueChange={(value) => updateTimeBlock(block.id, "endTime", value)}
+                      >
+                        <SelectTrigger className="h-8 text-xs">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent className="max-h-[200px]">
+                          {TIME_OPTIONS.filter((time) => time > block.startTime).map((time) => (
+                            <SelectItem key={time} value={time} className="text-xs">
+                              {time}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-xs text-muted-foreground">카테고리</label>
+                    <Select
+                      value={block.category}
+                      onValueChange={(value) => updateTimeBlock(block.id, "category", value)}
+                    >
+                      <SelectTrigger className="h-8 text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {categories.map((cat) => (
+                          <SelectItem key={cat.value} value={cat.value}>
+                            <span className={`px-2 py-1 rounded-md text-xs ${cat.color}`}>
+                              {cat.label}
+                            </span>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <label className="text-xs text-muted-foreground">활동 내용</label>
+                    <Textarea
+                      value={block.activity}
+                      onChange={(e) => updateTimeBlock(block.id, "activity", e.target.value)}
+                      placeholder="활동 내용을 입력하세요"
+                      className="min-h-[60px] text-xs"
+                    />
+                  </div>
+                </>
+              );
+            })()}
           </div>
         )}
       </CardContent>
