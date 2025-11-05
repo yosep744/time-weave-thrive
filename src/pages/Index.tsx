@@ -7,6 +7,7 @@ import { WeeklyStats } from "@/components/WeeklyStats";
 import { MonthlyStats } from "@/components/MonthlyStats";
 import { TodayAnalysis } from "@/components/TodayAnalysis";
 import { CategoryTimeTable } from "@/components/CategoryTimeTable";
+import { WeeklyGoals } from "@/components/WeeklyGoals";
 import { useGoogleSheetsSync } from "@/hooks/useGoogleSheetsSync";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -156,6 +157,11 @@ const Index = () => {
             </TabsTrigger>
           </TabsList>
 
+          {/* Weekly Goals - Always Visible */}
+          <div className="mb-6 animate-fade-in">
+            <WeeklyGoals />
+          </div>
+
           <TabsContent value="today" className="space-y-6">
             <div className="grid lg:grid-cols-2 gap-6">
               <div className="space-y-6">
@@ -166,33 +172,6 @@ const Index = () => {
               <div className="space-y-6">
                 <TodayAnalysis />
                 <DailyReflection />
-                
-                <Card className="relative overflow-hidden hover-lift">
-                  <div 
-                    className="absolute inset-0 opacity-5"
-                    style={{ background: 'var(--gradient-primary)' }}
-                  />
-                  <div className="relative p-6">
-                    <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
-                      <Target className="h-5 w-5 text-primary" />
-                      이번 주 목표
-                    </h3>
-                    <ul className="space-y-3 text-sm">
-                      <li className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
-                        <span className="text-primary font-bold">•</span>
-                        <span className="text-foreground">매일 성찰 시간 15분 확보하기</span>
-                      </li>
-                      <li className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
-                        <span className="text-primary font-bold">•</span>
-                        <span className="text-foreground">주말에 1시간 주간 피드백 작성하기</span>
-                      </li>
-                      <li className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
-                        <span className="text-primary font-bold">•</span>
-                        <span className="text-foreground">각 분야별 시간 균형 맞추기</span>
-                      </li>
-                    </ul>
-                  </div>
-                </Card>
               </div>
             </div>
           </TabsContent>
