@@ -10,7 +10,9 @@ import { CategoryTimeTable } from "@/components/CategoryTimeTable";
 import { useGoogleSheetsSync } from "@/hooks/useGoogleSheetsSync";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Clock, Target, CalendarDays, TrendingUp, LogOut } from "lucide-react";
+import { Card } from "@/components/ui/card";
+import { ThemeSwitcher } from "@/components/ThemeSwitcher";
+import { Clock, Target, CalendarDays, TrendingUp, LogOut, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import type { User } from "@supabase/supabase-js";
 
@@ -65,10 +67,13 @@ const Index = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-background via-background to-secondary/20 flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <Clock className="h-12 w-12 animate-spin text-primary mx-auto" />
-          <p className="text-muted-foreground">로딩 중...</p>
+      <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--gradient-subtle)' }}>
+        <div className="text-center space-y-4 animate-fade-in">
+          <div className="relative">
+            <div className="absolute inset-0 blur-xl opacity-50" style={{ background: 'var(--gradient-primary)' }} />
+            <Clock className="h-12 w-12 animate-spin text-primary mx-auto relative" />
+          </div>
+          <p className="text-muted-foreground font-medium">로딩 중...</p>
         </div>
       </div>
     );
@@ -79,49 +84,73 @@ const Index = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-secondary/20">
-      <div className="container max-w-6xl mx-auto px-4 py-8 space-y-8">
-        {/* Header */}
-        <header className="text-center space-y-4 py-8 relative">
-          <div className="absolute top-0 right-0">
-            <Button
-              onClick={handleLogout}
-              variant="ghost"
-              size="sm"
-              className="gap-2"
-            >
-              <LogOut className="h-4 w-4" />
-              로그아웃
-            </Button>
+    <div className="min-h-screen" style={{ background: 'var(--gradient-subtle)' }}>
+      <div className="container max-w-7xl mx-auto px-4 py-8 space-y-8">
+        {/* Premium Header */}
+        <div className="animate-fade-in">
+          <div className="relative overflow-hidden rounded-3xl">
+            <div 
+              className="absolute inset-0 opacity-10"
+              style={{ background: 'var(--gradient-primary)' }}
+            />
+            <Card className="relative border-0 shadow-xl">
+              <div className="p-8">
+                <div className="flex justify-between items-start mb-6">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-3">
+                      <Sparkles className="w-8 h-8 text-primary" />
+                      <h1 className="text-4xl md:text-5xl font-bold gradient-text">
+                        시간 사용 명세서
+                      </h1>
+                    </div>
+                    <p className="text-lg text-muted-foreground">
+                      {today}
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    <ThemeSwitcher />
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={handleLogout}
+                      className="rounded-full hover-scale"
+                    >
+                      <LogOut className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+                <div className="glass rounded-xl p-4 inline-block">
+                  <p className="text-sm font-medium flex items-center gap-2">
+                    <Target className="h-4 w-4 text-primary" />
+                    매일 15분, 나를 성찰하는 시간
+                  </p>
+                </div>
+              </div>
+            </Card>
           </div>
-          
-          <div className="flex items-center justify-center gap-3">
-            <div className="p-3 rounded-2xl bg-gradient-to-br from-primary to-primary/70 shadow-[var(--shadow-soft)]">
-              <Clock className="h-8 w-8 text-primary-foreground" />
-            </div>
-            <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-primary via-primary to-accent bg-clip-text text-transparent">
-              시간 기록
-            </h1>
-          </div>
-          <p className="text-muted-foreground text-lg">{today}</p>
-          <div className="flex items-center justify-center gap-2 text-sm text-accent">
-            <Target className="h-4 w-4" />
-            <span>매일 15분, 나를 성찰하는 시간</span>
-          </div>
-        </header>
+        </div>
 
-        {/* Main Content */}
-        <Tabs defaultValue="today" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 max-w-md mx-auto mb-8">
-            <TabsTrigger value="today" className="gap-2">
+        {/* Premium Tabs */}
+        <Tabs defaultValue="today" className="w-full animate-slide-up">
+          <TabsList className="grid w-full grid-cols-3 max-w-2xl mx-auto mb-8 p-1.5 h-auto bg-card/50 backdrop-blur-sm border shadow-md">
+            <TabsTrigger 
+              value="today" 
+              className="gap-2 rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/80 data-[state=active]:text-white font-medium px-6 py-2.5"
+            >
               <Clock className="h-4 w-4" />
               오늘
             </TabsTrigger>
-            <TabsTrigger value="weekly" className="gap-2">
+            <TabsTrigger 
+              value="weekly" 
+              className="gap-2 rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/80 data-[state=active]:text-white font-medium px-6 py-2.5"
+            >
               <CalendarDays className="h-4 w-4" />
               주간 분석
             </TabsTrigger>
-            <TabsTrigger value="monthly" className="gap-2">
+            <TabsTrigger 
+              value="monthly" 
+              className="gap-2 rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-primary data-[state=active]:to-primary/80 data-[state=active]:text-white font-medium px-6 py-2.5"
+            >
               <TrendingUp className="h-4 w-4" />
               월간 분석
             </TabsTrigger>
@@ -138,26 +167,32 @@ const Index = () => {
                 <TodayAnalysis />
                 <DailyReflection />
                 
-                <div className="p-6 rounded-xl bg-gradient-to-br from-accent/10 to-accent/5 border border-accent/20">
-                  <h3 className="font-semibold text-accent mb-3 flex items-center gap-2">
-                    <Target className="h-4 w-4" />
-                    이번 주 목표
-                  </h3>
-                  <ul className="space-y-2 text-sm text-foreground/80">
-                    <li className="flex items-start gap-2">
-                      <span className="text-accent mt-0.5">•</span>
-                      <span>매일 성찰 시간 15분 확보하기</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="text-accent mt-0.5">•</span>
-                      <span>주말에 1시간 주간 피드백 작성하기</span>
-                    </li>
-                    <li className="flex items-start gap-2">
-                      <span className="text-accent mt-0.5">•</span>
-                      <span>각 분야별 시간 균형 맞추기</span>
-                    </li>
-                  </ul>
-                </div>
+                <Card className="relative overflow-hidden hover-lift">
+                  <div 
+                    className="absolute inset-0 opacity-5"
+                    style={{ background: 'var(--gradient-primary)' }}
+                  />
+                  <div className="relative p-6">
+                    <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
+                      <Target className="h-5 w-5 text-primary" />
+                      이번 주 목표
+                    </h3>
+                    <ul className="space-y-3 text-sm">
+                      <li className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
+                        <span className="text-primary font-bold">•</span>
+                        <span className="text-foreground">매일 성찰 시간 15분 확보하기</span>
+                      </li>
+                      <li className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
+                        <span className="text-primary font-bold">•</span>
+                        <span className="text-foreground">주말에 1시간 주간 피드백 작성하기</span>
+                      </li>
+                      <li className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
+                        <span className="text-primary font-bold">•</span>
+                        <span className="text-foreground">각 분야별 시간 균형 맞추기</span>
+                      </li>
+                    </ul>
+                  </div>
+                </Card>
               </div>
             </div>
           </TabsContent>
