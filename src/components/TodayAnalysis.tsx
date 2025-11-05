@@ -69,17 +69,17 @@ export const TodayAnalysis = () => {
   // Convert color classes to hex for charts
   const getColorHex = (colorClass: string): string => {
     const colorMap: Record<string, string> = {
-      'bg-primary/20 text-primary border-primary/30': 'hsl(var(--primary))',
-      'bg-accent/20 text-accent border-accent/30': 'hsl(var(--accent))',
-      'bg-green-500/20 text-green-700 dark:text-green-300 border-green-500/30': '#22c55e',
-      'bg-blue-500/20 text-blue-700 dark:text-blue-300 border-blue-500/30': '#3b82f6',
-      'bg-orange-500/20 text-orange-700 dark:text-orange-300 border-orange-500/30': '#f97316',
-      'bg-purple-500/20 text-purple-700 dark:text-purple-300 border-purple-500/30': '#a855f7',
-      'bg-pink-500/20 text-pink-700 dark:text-pink-300 border-pink-500/30': '#ec4899',
-      'bg-red-500/20 text-red-700 dark:text-red-300 border-red-500/30': '#ef4444',
-      'bg-muted/50 text-foreground border-border': 'hsl(var(--muted-foreground))',
+      'bg-blue-100 text-blue-900 border-blue-300 dark:bg-blue-900/40 dark:text-blue-100 dark:border-blue-700': '#3b82f6',
+      'bg-purple-100 text-purple-900 border-purple-300 dark:bg-purple-900/40 dark:text-purple-100 dark:border-purple-700': '#a855f7',
+      'bg-green-100 text-green-900 border-green-300 dark:bg-green-900/40 dark:text-green-100 dark:border-green-700': '#22c55e',
+      'bg-orange-100 text-orange-900 border-orange-300 dark:bg-orange-900/40 dark:text-orange-100 dark:border-orange-700': '#f97316',
+      'bg-pink-100 text-pink-900 border-pink-300 dark:bg-pink-900/40 dark:text-pink-100 dark:border-pink-700': '#ec4899',
+      'bg-red-100 text-red-900 border-red-300 dark:bg-red-900/40 dark:text-red-100 dark:border-red-700': '#ef4444',
+      'bg-teal-100 text-teal-900 border-teal-300 dark:bg-teal-900/40 dark:text-teal-100 dark:border-teal-700': '#14b8a6',
+      'bg-yellow-100 text-yellow-900 border-yellow-300 dark:bg-yellow-900/40 dark:text-yellow-100 dark:border-yellow-700': '#eab308',
+      'bg-gray-100 text-gray-900 border-gray-300 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600': '#6b7280',
     };
-    return colorMap[colorClass] || 'hsl(var(--muted))';
+    return colorMap[colorClass] || '#6b7280';
   };
 
   if (stats.length === 0) {

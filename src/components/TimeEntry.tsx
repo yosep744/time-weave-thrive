@@ -24,23 +24,23 @@ interface Category {
 }
 
 const DEFAULT_CATEGORIES: Category[] = [
-  { value: "work", label: "업무", color: "bg-primary/20 text-primary border-primary/30" },
-  { value: "study", label: "공부", color: "bg-accent/20 text-accent border-accent/30" },
-  { value: "exercise", label: "운동", color: "bg-green-500/20 text-green-700 dark:text-green-300 border-green-500/30" },
-  { value: "meal", label: "식사", color: "bg-orange-500/20 text-orange-700 dark:text-orange-300 border-orange-500/30" },
-  { value: "rest", label: "휴식", color: "bg-purple-500/20 text-purple-700 dark:text-purple-300 border-purple-500/30" },
-  { value: "other", label: "기타", color: "bg-muted/50 text-foreground border-border" },
+  { value: "work", label: "업무", color: "bg-blue-100 text-blue-900 border-blue-300 dark:bg-blue-900/40 dark:text-blue-100 dark:border-blue-700" },
+  { value: "study", label: "공부", color: "bg-purple-100 text-purple-900 border-purple-300 dark:bg-purple-900/40 dark:text-purple-100 dark:border-purple-700" },
+  { value: "exercise", label: "운동", color: "bg-green-100 text-green-900 border-green-300 dark:bg-green-900/40 dark:text-green-100 dark:border-green-700" },
+  { value: "meal", label: "식사", color: "bg-orange-100 text-orange-900 border-orange-300 dark:bg-orange-900/40 dark:text-orange-100 dark:border-orange-700" },
+  { value: "rest", label: "휴식", color: "bg-pink-100 text-pink-900 border-pink-300 dark:bg-pink-900/40 dark:text-pink-100 dark:border-pink-700" },
+  { value: "other", label: "기타", color: "bg-gray-100 text-gray-900 border-gray-300 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600" },
 ];
 
 const COLOR_OPTIONS = [
-  { value: "bg-primary/20 text-primary border-primary/30", label: "Primary" },
-  { value: "bg-accent/20 text-accent border-accent/30", label: "Accent" },
-  { value: "bg-green-500/20 text-green-700 dark:text-green-300 border-green-500/30", label: "Green" },
-  { value: "bg-blue-500/20 text-blue-700 dark:text-blue-300 border-blue-500/30", label: "Blue" },
-  { value: "bg-orange-500/20 text-orange-700 dark:text-orange-300 border-orange-500/30", label: "Orange" },
-  { value: "bg-purple-500/20 text-purple-700 dark:text-purple-300 border-purple-500/30", label: "Purple" },
-  { value: "bg-pink-500/20 text-pink-700 dark:text-pink-300 border-pink-500/30", label: "Pink" },
-  { value: "bg-red-500/20 text-red-700 dark:text-red-300 border-red-500/30", label: "Red" },
+  { value: "bg-blue-100 text-blue-900 border-blue-300 dark:bg-blue-900/40 dark:text-blue-100 dark:border-blue-700", label: "Blue" },
+  { value: "bg-purple-100 text-purple-900 border-purple-300 dark:bg-purple-900/40 dark:text-purple-100 dark:border-purple-700", label: "Purple" },
+  { value: "bg-green-100 text-green-900 border-green-300 dark:bg-green-900/40 dark:text-green-100 dark:border-green-700", label: "Green" },
+  { value: "bg-orange-100 text-orange-900 border-orange-300 dark:bg-orange-900/40 dark:text-orange-100 dark:border-orange-700", label: "Orange" },
+  { value: "bg-pink-100 text-pink-900 border-pink-300 dark:bg-pink-900/40 dark:text-pink-100 dark:border-pink-700", label: "Pink" },
+  { value: "bg-red-100 text-red-900 border-red-300 dark:bg-red-900/40 dark:text-red-100 dark:border-red-700", label: "Red" },
+  { value: "bg-teal-100 text-teal-900 border-teal-300 dark:bg-teal-900/40 dark:text-teal-100 dark:border-teal-700", label: "Teal" },
+  { value: "bg-yellow-100 text-yellow-900 border-yellow-300 dark:bg-yellow-900/40 dark:text-yellow-100 dark:border-yellow-700", label: "Yellow" },
 ];
 
 const generateTimeOptions = () => {
@@ -515,29 +515,29 @@ export const TimeEntry = () => {
                           <div className="p-2 space-y-2 h-full overflow-auto">
                             <div className="flex items-center justify-between mb-2">
                               <div className="flex items-center gap-1">
-                                <GripVertical className="h-3 w-3 opacity-50" />
-                                <span className="text-xs font-semibold">편집 중</span>
+                                <GripVertical className="h-4 w-4 opacity-50" />
+                                <span className="text-sm font-semibold">편집 중</span>
                               </div>
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                className="h-5 w-5 p-0 hover:bg-destructive/20"
+                                className="h-6 w-6 p-0 hover:bg-destructive/20"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   removeTimeBlock(block.id);
                                   setSelectedBlock(null);
                                 }}
                               >
-                                <Trash2 className="h-3 w-3" />
+                                <Trash2 className="h-3.5 w-3.5" />
                               </Button>
                             </div>
                             
-                            <div className="grid grid-cols-2 gap-1">
+                            <div className="grid grid-cols-2 gap-1.5">
                               <Select
                                 value={block.startTime}
                                 onValueChange={(value) => updateTimeBlock(block.id, "startTime", value)}
                               >
-                                <SelectTrigger className="h-7 text-[10px]" onClick={(e) => e.stopPropagation()}>
+                                <SelectTrigger className="h-8 text-xs" onClick={(e) => e.stopPropagation()}>
                                   <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent className="max-h-48">
@@ -553,7 +553,7 @@ export const TimeEntry = () => {
                                 value={block.endTime}
                                 onValueChange={(value) => updateTimeBlock(block.id, "endTime", value)}
                               >
-                                <SelectTrigger className="h-7 text-[10px]" onClick={(e) => e.stopPropagation()}>
+                                <SelectTrigger className="h-8 text-xs" onClick={(e) => e.stopPropagation()}>
                                   <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent className="max-h-48">
@@ -570,13 +570,13 @@ export const TimeEntry = () => {
                               value={block.category}
                               onValueChange={(value) => updateTimeBlock(block.id, "category", value)}
                             >
-                              <SelectTrigger className="h-7 text-[10px]" onClick={(e) => e.stopPropagation()}>
+                              <SelectTrigger className="h-8 text-xs" onClick={(e) => e.stopPropagation()}>
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
                                 {categories.map((cat) => (
                                   <SelectItem key={cat.value} value={cat.value}>
-                                    <span className={`px-2 py-0.5 rounded-md text-[10px] ${cat.color}`}>
+                                    <span className={`px-2 py-0.5 rounded-md text-xs ${cat.color}`}>
                                       {cat.label}
                                     </span>
                                   </SelectItem>
@@ -588,24 +588,27 @@ export const TimeEntry = () => {
                               placeholder="활동 내용"
                               value={block.activity}
                               onChange={(e) => updateTimeBlock(block.id, "activity", e.target.value)}
-                              className="min-h-12 text-[10px] p-1.5 bg-card/50"
+                              className="min-h-14 text-xs p-2 bg-background/50"
                               onClick={(e) => e.stopPropagation()}
                             />
                           </div>
                         ) : (
-                          <div className="p-2 text-xs font-medium h-full flex flex-col">
-                            <div className="flex items-center justify-between mb-1">
-                              <span className="font-semibold">{getCategoryLabel(block.category)}</span>
-                              <GripVertical className="h-3 w-3 opacity-30" />
+                          <div className="px-2.5 py-2 h-full flex flex-col gap-1">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                                <span className="font-semibold text-sm truncate">{getCategoryLabel(block.category)}</span>
+                                {block.activity && (
+                                  <>
+                                    <span className="text-xs opacity-50">•</span>
+                                    <span className="text-xs opacity-90 truncate flex-1">{block.activity}</span>
+                                  </>
+                                )}
+                              </div>
+                              <GripVertical className="h-3.5 w-3.5 opacity-30 flex-shrink-0 ml-1" />
                             </div>
-                            <div className="text-[10px] opacity-80 font-medium">
+                            <div className="text-xs opacity-75 font-medium">
                               {block.startTime} - {block.endTime}
                             </div>
-                            {block.activity && (
-                              <div className="text-[10px] mt-1 opacity-70 line-clamp-2 flex-1">
-                                {block.activity}
-                              </div>
-                            )}
                           </div>
                         )}
                       </div>
