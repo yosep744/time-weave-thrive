@@ -14,10 +14,14 @@ export const DailyReflection = () => {
   // Load reflection from Supabase
   useEffect(() => {
     const loadReflection = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
       const { data, error } = await supabase
         .from('reflections')
         .select('content')
         .eq('date', today)
+        .eq('user_id', user.id)
         .maybeSingle();
 
       if (!error && data) {
@@ -58,13 +62,20 @@ export const DailyReflection = () => {
     
     setIsSaving(true);
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        toast.error("로그인이 필요합니다");
+        return;
+      }
+
       const { error } = await supabase
         .from('reflections')
         .upsert({
           date: today,
           content: reflection,
+          user_id: user.id,
         }, {
-          onConflict: 'date'
+          onConflict: 'date,user_id'
         });
 
       if (error) throw error;

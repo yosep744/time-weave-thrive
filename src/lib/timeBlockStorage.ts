@@ -2,11 +2,15 @@ import { TimeBlockExport } from "@/components/TimeEntry";
 import { supabase } from "@/integrations/supabase/client";
 
 export const saveTimeBlock = async (date: string, blocks: any[]) => {
-  // Delete existing blocks for this date
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("User not authenticated");
+
+  // Delete existing blocks for this date and user
   await supabase
     .from('time_blocks')
     .delete()
-    .eq('date', date);
+    .eq('date', date)
+    .eq('user_id', user.id);
 
   // Insert new blocks
   if (blocks.length > 0) {
@@ -16,6 +20,7 @@ export const saveTimeBlock = async (date: string, blocks: any[]) => {
       end_time: block.endTime,
       category: block.category,
       activity: block.activity || null,
+      user_id: user.id,
     }));
 
     await supabase
@@ -35,10 +40,14 @@ export const saveTimeBlock = async (date: string, blocks: any[]) => {
 };
 
 export const getTimeBlock = async (date: string) => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return [];
+
   const { data, error } = await supabase
     .from('time_blocks')
     .select('*')
     .eq('date', date)
+    .eq('user_id', user.id)
     .order('start_time', { ascending: true });
 
   if (error) {
@@ -56,12 +65,16 @@ export const getTimeBlock = async (date: string) => {
 };
 
 export const getTimeBlocksForDateRange = async (startDate: Date, endDate: Date): Promise<TimeBlockExport[]> => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return [];
+
   const startDateStr = startDate.toISOString().split('T')[0];
   const endDateStr = endDate.toISOString().split('T')[0];
 
   const { data, error } = await supabase
     .from('time_blocks')
     .select('*')
+    .eq('user_id', user.id)
     .gte('date', startDateStr)
     .lte('date', endDateStr)
     .order('date', { ascending: true })
@@ -103,9 +116,13 @@ export const getCategoryStats = (blocks: TimeBlockExport[]) => {
 };
 
 export const getCategories = async () => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return [];
+
   const { data, error } = await supabase
     .from('categories')
     .select('*')
+    .eq('user_id', user.id)
     .order('label', { ascending: true });
 
   if (error) {
@@ -117,8 +134,14 @@ export const getCategories = async () => {
 };
 
 export const saveCategories = async (categories: any[]) => {
-  // Delete all existing categories
-  await supabase.from('categories').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("User not authenticated");
+
+  // Delete all existing categories for this user
+  await supabase
+    .from('categories')
+    .delete()
+    .eq('user_id', user.id);
 
   // Insert new categories
   if (categories.length > 0) {
@@ -126,6 +149,7 @@ export const saveCategories = async (categories: any[]) => {
       value: cat.value,
       label: cat.label,
       color: cat.color,
+      user_id: user.id,
     }));
 
     await supabase

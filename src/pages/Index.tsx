@@ -1,12 +1,22 @@
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 import { TimeEntry } from "@/components/TimeEntry";
 import { DailyReflection } from "@/components/DailyReflection";
 import { WeeklyStats } from "@/components/WeeklyStats";
 import { MonthlyStats } from "@/components/MonthlyStats";
 import { GoogleSheetsSync } from "@/components/GoogleSheetsSync";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Clock, Target, CalendarDays, TrendingUp } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Clock, Target, CalendarDays, TrendingUp, LogOut } from "lucide-react";
+import { toast } from "sonner";
+import type { User } from "@supabase/supabase-js";
 
 const Index = () => {
+  const navigate = useNavigate();
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+
   const today = new Date().toLocaleDateString("ko-KR", {
     year: "numeric",
     month: "long",
@@ -14,11 +24,72 @@ const Index = () => {
     weekday: "long",
   });
 
+  useEffect(() => {
+    // Set up auth state listener first
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      setUser(session?.user ?? null);
+      setLoading(false);
+      
+      if (!session) {
+        navigate("/auth");
+      }
+    });
+
+    // Then check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      setLoading(false);
+      
+      if (!session) {
+        navigate("/auth");
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [navigate]);
+
+  const handleLogout = async () => {
+    try {
+      await supabase.auth.signOut();
+      toast.success("로그아웃되었습니다");
+      navigate("/auth");
+    } catch (error) {
+      toast.error("로그아웃에 실패했습니다");
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-background via-background to-secondary/20 flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <Clock className="h-12 w-12 animate-spin text-primary mx-auto" />
+          <p className="text-muted-foreground">로딩 중...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return null;
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-secondary/20">
       <div className="container max-w-6xl mx-auto px-4 py-8 space-y-8">
         {/* Header */}
-        <header className="text-center space-y-4 py-8">
+        <header className="text-center space-y-4 py-8 relative">
+          <div className="absolute top-0 right-0">
+            <Button
+              onClick={handleLogout}
+              variant="ghost"
+              size="sm"
+              className="gap-2"
+            >
+              <LogOut className="h-4 w-4" />
+              로그아웃
+            </Button>
+          </div>
+          
           <div className="flex items-center justify-center gap-3">
             <div className="p-3 rounded-2xl bg-gradient-to-br from-primary to-primary/70 shadow-[var(--shadow-soft)]">
               <Clock className="h-8 w-8 text-primary-foreground" />
