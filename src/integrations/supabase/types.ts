@@ -20,6 +20,7 @@ export type Database = {
           created_at: string | null
           id: string
           label: string
+          user_id: string | null
           value: string
         }
         Insert: {
@@ -27,6 +28,7 @@ export type Database = {
           created_at?: string | null
           id?: string
           label: string
+          user_id?: string | null
           value: string
         }
         Update: {
@@ -34,7 +36,43 @@ export type Database = {
           created_at?: string | null
           id?: string
           label?: string
+          user_id?: string | null
           value?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "categories_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string | null
+          email: string | null
+          full_name: string | null
+          id: string
+          updated_at: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string | null
+          email?: string | null
+          full_name?: string | null
+          id: string
+          updated_at?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string | null
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          updated_at?: string | null
         }
         Relationships: []
       }
@@ -45,6 +83,7 @@ export type Database = {
           date: string
           id: string
           updated_at: string | null
+          user_id: string | null
         }
         Insert: {
           content: string
@@ -52,6 +91,7 @@ export type Database = {
           date: string
           id?: string
           updated_at?: string | null
+          user_id?: string | null
         }
         Update: {
           content?: string
@@ -59,8 +99,17 @@ export type Database = {
           date?: string
           id?: string
           updated_at?: string | null
+          user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "reflections_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       time_blocks: {
         Row: {
@@ -72,6 +121,7 @@ export type Database = {
           id: string
           start_time: string
           updated_at: string | null
+          user_id: string | null
         }
         Insert: {
           activity?: string | null
@@ -82,6 +132,7 @@ export type Database = {
           id?: string
           start_time: string
           updated_at?: string | null
+          user_id?: string | null
         }
         Update: {
           activity?: string | null
@@ -92,8 +143,17 @@ export type Database = {
           id?: string
           start_time?: string
           updated_at?: string | null
+          user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "time_blocks_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
