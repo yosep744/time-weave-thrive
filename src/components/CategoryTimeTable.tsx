@@ -29,12 +29,29 @@ export const CategoryTimeTable = () => {
         
         const [startHour, startMin] = block.startTime.split(':').map(Number);
         const [endHour, endMin] = block.endTime.split(':').map(Number);
+        
+        // Validate time values
+        if (isNaN(startHour) || isNaN(startMin) || isNaN(endHour) || isNaN(endMin)) {
+          console.warn('Invalid time format:', block);
+          return;
+        }
+        
         const startMinutes = startHour * 60 + startMin;
         const endMinutes = endHour * 60 + endMin;
-        const duration = (endMinutes - startMinutes) / 60;
         
-        const current = categoryMap.get(block.category) || 0;
-        categoryMap.set(block.category, current + duration);
+        // Calculate duration (handle negative duration by skipping)
+        if (endMinutes <= startMinutes) {
+          console.warn('Invalid time range:', block);
+          return;
+        }
+        
+        const duration = (endMinutes - startMinutes) / 60; // hours
+        
+        // Only add if duration is reasonable (< 24 hours)
+        if (duration > 0 && duration <= 24) {
+          const current = categoryMap.get(block.category) || 0;
+          categoryMap.set(block.category, current + duration);
+        }
       });
 
       const total = Array.from(categoryMap.values()).reduce((sum, val) => sum + val, 0);
@@ -43,12 +60,17 @@ export const CategoryTimeTable = () => {
       const times: CategoryTime[] = Array.from(categoryMap.entries())
         .map(([value, hours]) => {
           const category = categories.find(c => c.value === value);
+          
+          // Always use Korean label from category, never show English value
+          const displayLabel = category?.label || value;
+          
           return {
-            label: category?.label || value,
-            hours: Math.round(hours * 10) / 10,
-            color: category?.color || 'bg-gray-100 text-gray-900 border-gray-300',
+            label: displayLabel,
+            hours: Math.round(hours * 100) / 100, // Round to 2 decimal places
+            color: category?.color || 'bg-gray-100 text-gray-900 border-gray-300 dark:bg-gray-800 dark:text-gray-100',
           };
         })
+        .filter(item => item.hours > 0) // Only show categories with time
         .sort((a, b) => b.hours - a.hours);
 
       setCategoryTimes(times);

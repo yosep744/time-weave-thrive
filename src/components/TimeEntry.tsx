@@ -466,8 +466,8 @@ export const TimeEntry = () => {
                         onMouseDown={(e) => handleBlockResizeStart(e, block.id, 'move')}
                       >
                         {isSelected ? (
-                          <div className="p-1.5 md:p-2 space-y-2 md:space-y-2.5 h-full">
-                            <div className="flex items-center justify-between mb-1">
+                          <div className="p-1.5 md:p-2 space-y-2 md:space-y-2.5 h-full overflow-y-auto">
+                            <div className="flex items-center justify-between mb-1 bg-background/80 backdrop-blur-sm rounded px-2 py-1">
                               <div className="flex items-center gap-1">
                                 <GripVertical className="h-3 md:h-4 w-3 md:w-4 opacity-50" />
                                 <span className="text-xs md:text-sm font-semibold">편집 중</span>
@@ -486,49 +486,63 @@ export const TimeEntry = () => {
                               </Button>
                             </div>
                             
-                            <div className="grid grid-cols-2 gap-1 md:gap-1.5">
-                              <Select
-                                value={block.startTime}
-                                onValueChange={(value) => updateTimeBlock(block.id, "startTime", value)}
-                              >
-                                <SelectTrigger className="h-7 md:h-8 text-[10px] md:text-xs" onClick={(e) => e.stopPropagation()}>
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent className="max-h-48">
-                                  {TIME_OPTIONS.map((time) => (
-                                    <SelectItem key={time} value={time} className="text-xs">
-                                      {time}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                              
-                              <Select
-                                value={block.endTime}
-                                onValueChange={(value) => updateTimeBlock(block.id, "endTime", value)}
-                              >
-                                <SelectTrigger className="h-7 md:h-8 text-[10px] md:text-xs" onClick={(e) => e.stopPropagation()}>
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent className="max-h-48">
-                                  {TIME_OPTIONS.map((time) => (
-                                    <SelectItem key={time} value={time} className="text-xs">
-                                      {time}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
+                            <div className="space-y-1.5 bg-background/60 backdrop-blur-sm rounded p-2">
+                              <div className="text-[10px] md:text-xs font-medium text-muted-foreground mb-1">
+                                시간 설정
+                              </div>
+                              <div className="grid grid-cols-2 gap-1.5 md:gap-2">
+                                <div>
+                                  <label className="text-[9px] md:text-[10px] text-muted-foreground mb-0.5 block">시작</label>
+                                  <Select
+                                    value={block.startTime}
+                                    onValueChange={(value) => updateTimeBlock(block.id, "startTime", value)}
+                                  >
+                                    <SelectTrigger className="h-8 md:h-9 text-xs md:text-sm font-semibold" onClick={(e) => e.stopPropagation()}>
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent className="max-h-48 bg-background">
+                                      {TIME_OPTIONS.map((time) => (
+                                        <SelectItem key={time} value={time} className="text-xs">
+                                          {time}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                                
+                                <div>
+                                  <label className="text-[9px] md:text-[10px] text-muted-foreground mb-0.5 block">종료</label>
+                                  <Select
+                                    value={block.endTime}
+                                    onValueChange={(value) => updateTimeBlock(block.id, "endTime", value)}
+                                  >
+                                    <SelectTrigger className="h-8 md:h-9 text-xs md:text-sm font-semibold" onClick={(e) => e.stopPropagation()}>
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent className="max-h-48 bg-background">
+                                      {TIME_OPTIONS.map((time) => (
+                                        <SelectItem key={time} value={time} className="text-xs">
+                                          {time}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                              </div>
                             </div>
                             
-                            <div className="flex items-center gap-1 md:gap-2 min-w-0">
+                            <div className="space-y-1.5 bg-background/60 backdrop-blur-sm rounded p-2">
+                              <div className="text-[10px] md:text-xs font-medium text-muted-foreground mb-1">
+                                카테고리 & 활동
+                              </div>
                               <Select
                                 value={block.category}
                                 onValueChange={(value) => updateTimeBlock(block.id, "category", value)}
                               >
-                                <SelectTrigger className="h-7 md:h-8 text-[10px] md:text-xs w-20 md:w-24 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
+                                <SelectTrigger className="h-8 md:h-9 text-xs md:text-sm" onClick={(e) => e.stopPropagation()}>
                                   <SelectValue />
                                 </SelectTrigger>
-                                <SelectContent>
+                                <SelectContent className="bg-background">
                                   {categories.map((cat) => (
                                     <SelectItem key={cat.value} value={cat.value}>
                                       <span className={`px-2 py-0.5 rounded-md text-xs ${cat.color}`}>
@@ -543,7 +557,7 @@ export const TimeEntry = () => {
                                 placeholder="활동 내용"
                                 value={block.activity}
                                 onChange={(e) => updateTimeBlock(block.id, "activity", e.target.value)}
-                                className="h-7 md:h-8 text-[10px] md:text-xs flex-1 min-w-0 bg-background/50"
+                                className="h-8 md:h-9 text-xs md:text-sm bg-background"
                                 onClick={(e) => e.stopPropagation()}
                               />
                             </div>
