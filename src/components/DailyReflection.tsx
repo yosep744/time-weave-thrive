@@ -61,13 +61,18 @@ export const DailyReflection = () => {
   }, [today]);
 
   const handleSave = async () => {
-    if (!reflection.trim()) return;
+    if (!reflection.trim()) {
+      toast.error("성찰 내용을 입력해주세요");
+      return;
+    }
     
     setIsSaving(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) {
+        console.error('User auth error:', userError);
         toast.error("로그인이 필요합니다");
+        setIsSaving(false);
         return;
       }
 
@@ -81,12 +86,15 @@ export const DailyReflection = () => {
           onConflict: 'date,user_id'
         });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Upsert error:', error);
+        throw error;
+      }
       
       toast.success("오늘의 성찰이 저장되었습니다");
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error saving reflection:', error);
-      toast.error("저장 중 오류가 발생했습니다");
+      toast.error(error?.message || "저장 중 오류가 발생했습니다");
     } finally {
       setIsSaving(false);
     }

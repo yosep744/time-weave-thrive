@@ -497,6 +497,10 @@ export const TimeEntry = () => {
                       }`}
                       style={style}
                       onClick={() => setSelectedBlock(isSelected ? null : block.id)}
+                      onTouchEnd={(e) => {
+                        e.preventDefault();
+                        setSelectedBlock(isSelected ? null : block.id);
+                      }}
                     >
                       {/* Top resize handle */}
                       <div

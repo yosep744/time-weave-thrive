@@ -151,10 +151,14 @@ const Auth = () => {
             </div>
           </div>
           <CardTitle className="text-3xl font-bold bg-gradient-to-r from-primary via-primary to-accent bg-clip-text text-transparent">
-            시간 기록
+            시간명세서
           </CardTitle>
-          <CardDescription>
-            {isLogin ? "로그인하여 시작하세요" : "회원가입하여 시작하세요"}
+          <CardDescription className="space-y-2">
+            <p>{isLogin ? "로그인하여 시작하세요" : "회원가입하여 시작하세요"}</p>
+            <p className="text-xs italic leading-relaxed">
+              '인식'이 변화의 시작입니다.<br />
+              당신의 행동이 당신이 누구인지 알려줍니다.
+            </p>
           </CardDescription>
         </CardHeader>
 

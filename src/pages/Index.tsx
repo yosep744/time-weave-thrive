@@ -33,27 +33,54 @@ const Index = () => {
   });
 
   useEffect(() => {
-    // Set up auth state listener first
+    let isMounted = true;
+    
+    // Check for existing session immediately
+    const checkSession = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (!isMounted) return;
+        
+        if (error) {
+          console.error('Session error:', error);
+          setLoading(false);
+          navigate("/auth");
+          return;
+        }
+        
+        setUser(session?.user ?? null);
+        setLoading(false);
+        
+        if (!session) {
+          navigate("/auth");
+        }
+      } catch (error) {
+        console.error('Auth check error:', error);
+        if (isMounted) {
+          setLoading(false);
+          navigate("/auth");
+        }
+      }
+    };
+    
+    checkSession();
+
+    // Set up auth state listener for future changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      setUser(session?.user ?? null);
-      setLoading(false);
+      if (!isMounted) return;
       
-      if (!session) {
+      setUser(session?.user ?? null);
+      
+      if (!session && event === 'SIGNED_OUT') {
         navigate("/auth");
       }
     });
 
-    // Then check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      setLoading(false);
-      
-      if (!session) {
-        navigate("/auth");
-      }
-    });
-
-    return () => subscription.unsubscribe();
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
   }, [navigate]);
 
   const handleLogout = async () => {
