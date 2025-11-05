@@ -8,7 +8,6 @@ import { MonthlyStats } from "@/components/MonthlyStats";
 import { TodayAnalysis } from "@/components/TodayAnalysis";
 import { CategoryTimeTable } from "@/components/CategoryTimeTable";
 import { WeeklyGoals } from "@/components/WeeklyGoals";
-import { useGoogleSheetsSync } from "@/hooks/useGoogleSheetsSync";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -21,9 +20,6 @@ const Index = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  
-  // Enable background Google Sheets sync
-  useGoogleSheetsSync();
 
   const today = new Date().toLocaleDateString("ko-KR", {
     year: "numeric",
