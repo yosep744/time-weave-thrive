@@ -5,7 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Trash2 } from "lucide-react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Plus, Trash2, Clock } from "lucide-react";
 
 interface TimeBlock {
   id: string;
@@ -49,6 +50,27 @@ export const TimeEntry = () => {
     setTimeBlocks(
       timeBlocks.map((block) => (block.id === id ? { ...block, [field]: value } : block))
     );
+  };
+
+  const calculateDuration = (start: string, end: string) => {
+    if (!start || !end) return "-";
+    const [startHour, startMin] = start.split(":").map(Number);
+    const [endHour, endMin] = end.split(":").map(Number);
+    const startMinutes = startHour * 60 + startMin;
+    const endMinutes = endHour * 60 + endMin;
+    const duration = endMinutes - startMinutes;
+    if (duration < 0) return "-";
+    const hours = Math.floor(duration / 60);
+    const minutes = duration % 60;
+    return hours > 0 ? `${hours}시간 ${minutes}분` : `${minutes}분`;
+  };
+
+  const getCategoryLabel = (value: string) => {
+    return CATEGORIES.find((cat) => cat.value === value)?.label || value;
+  };
+
+  const getCategoryColor = (value: string) => {
+    return CATEGORIES.find((cat) => cat.value === value)?.color || "";
   };
 
   return (
@@ -153,6 +175,49 @@ export const TimeEntry = () => {
           <Plus className="h-4 w-4 mr-2" />
           시간 블록 추가
         </Button>
+
+        {timeBlocks.length > 0 && timeBlocks.some(block => block.startTime && block.endTime) && (
+          <div className="mt-6 pt-6 border-t border-border">
+            <div className="flex items-center gap-2 mb-4">
+              <Clock className="h-5 w-5 text-primary" />
+              <h3 className="text-lg font-semibold text-foreground">오늘의 시간 사용 내역</h3>
+            </div>
+            <div className="rounded-lg border border-border overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>시간</TableHead>
+                    <TableHead>카테고리</TableHead>
+                    <TableHead>활동</TableHead>
+                    <TableHead className="text-right">소요시간</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {timeBlocks
+                    .filter(block => block.startTime && block.endTime)
+                    .map((block) => (
+                      <TableRow key={block.id}>
+                        <TableCell className="font-medium">
+                          {block.startTime} - {block.endTime}
+                        </TableCell>
+                        <TableCell>
+                          <span className={`px-2 py-1 rounded-md text-xs font-medium ${getCategoryColor(block.category)}`}>
+                            {getCategoryLabel(block.category)}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">
+                          {block.activity || "-"}
+                        </TableCell>
+                        <TableCell className="text-right font-medium">
+                          {calculateDuration(block.startTime, block.endTime)}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
