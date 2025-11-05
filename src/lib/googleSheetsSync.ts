@@ -6,7 +6,7 @@ export const syncToGoogleSheets = async (showToast = false) => {
   const startDate = new Date();
   startDate.setDate(startDate.getDate() - 30);
   
-  const blocks = getTimeBlocksForDateRange(startDate, endDate);
+  const blocks = await getTimeBlocksForDateRange(startDate, endDate);
   
   if (blocks.length === 0) {
     return { success: false, message: "No data to upload" };

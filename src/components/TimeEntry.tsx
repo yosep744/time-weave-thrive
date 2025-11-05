@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Plus, Trash2, Clock, Settings, Palette } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface TimeBlock {
   id: string;
@@ -64,31 +65,102 @@ export interface TimeBlockExport extends TimeBlock {
 export const TimeEntry = () => {
   const today = new Date().toISOString().split('T')[0];
   
-  const [timeBlocks, setTimeBlocks] = useState<TimeBlock[]>(() => {
-    const saved = localStorage.getItem(`timeBlocks-${today}`);
-    return saved ? JSON.parse(saved) : [
-      { id: "1", startTime: "09:00", endTime: "12:00", category: "work", activity: "" },
-    ];
-  });
+  const [timeBlocks, setTimeBlocks] = useState<TimeBlock[]>([
+    { id: "1", startTime: "09:00", endTime: "12:00", category: "work", activity: "" },
+  ]);
   
-  const [categories, setCategories] = useState<Category[]>(() => {
-    const saved = localStorage.getItem('categories');
-    return saved ? JSON.parse(saved) : DEFAULT_CATEGORIES;
-  });
+  const [categories, setCategories] = useState<Category[]>(DEFAULT_CATEGORIES);
   
   const [editingCategory, setEditingCategory] = useState<Category | null>(null);
   const [newCategoryLabel, setNewCategoryLabel] = useState("");
   const [newCategoryColor, setNewCategoryColor] = useState(COLOR_OPTIONS[0].value);
 
-  // Save timeBlocks to localStorage
+  // Load initial data from Supabase
   useEffect(() => {
-    localStorage.setItem(`timeBlocks-${today}`, JSON.stringify(timeBlocks));
+    const loadData = async () => {
+      const { getTimeBlock, getCategories } = await import('@/lib/timeBlockStorage');
+      const [blocks, cats] = await Promise.all([
+        getTimeBlock(today),
+        getCategories()
+      ]);
+      
+      if (blocks.length > 0) {
+        setTimeBlocks(blocks);
+      }
+      
+      if (cats.length > 0) {
+        setCategories(cats);
+      } else {
+        // Initialize with default categories if none exist
+        const { saveCategories } = await import('@/lib/timeBlockStorage');
+        await saveCategories(DEFAULT_CATEGORIES);
+      }
+    };
+    
+    loadData();
+  }, [today]);
+
+  // Save timeBlocks to Supabase
+  useEffect(() => {
+    const saveData = async () => {
+      const { saveTimeBlock } = await import('@/lib/timeBlockStorage');
+      await saveTimeBlock(today, timeBlocks);
+    };
+    
+    saveData();
   }, [timeBlocks, today]);
 
-  // Save categories to localStorage
+  // Save categories to Supabase
   useEffect(() => {
-    localStorage.setItem('categories', JSON.stringify(categories));
+    const saveData = async () => {
+      const { saveCategories } = await import('@/lib/timeBlockStorage');
+      await saveCategories(categories);
+    };
+    
+    saveData();
   }, [categories]);
+
+  // Real-time sync from Supabase
+  useEffect(() => {
+    const channel = supabase
+      .channel('time_blocks_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'time_blocks',
+          filter: `date=eq.${today}`
+        },
+        async () => {
+          const { getTimeBlock } = await import('@/lib/timeBlockStorage');
+          const blocks = await getTimeBlock(today);
+          if (blocks.length > 0) {
+            setTimeBlocks(blocks);
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'categories'
+        },
+        async () => {
+          const { getCategories } = await import('@/lib/timeBlockStorage');
+          const cats = await getCategories();
+          if (cats.length > 0) {
+            setCategories(cats);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [today]);
 
   const addTimeBlock = () => {
     const lastBlock = timeBlocks[timeBlocks.length - 1];

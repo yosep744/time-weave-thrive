@@ -18,46 +18,50 @@ export const MonthlyStats = () => {
   const [categoryTotal, setCategoryTotal] = useState<any[]>([]);
   
   useEffect(() => {
-    const endDate = new Date();
-    const startDate = new Date();
-    startDate.setDate(startDate.getDate() - 27); // Last 4 weeks
-    
-    const categories = getCategories();
-    
-    // Calculate weekly data
-    const weeks: any[] = [];
-    for (let i = 0; i < 4; i++) {
-      const weekEnd = new Date(endDate);
-      weekEnd.setDate(weekEnd.getDate() - (i * 7));
-      const weekStart = new Date(weekEnd);
-      weekStart.setDate(weekStart.getDate() - 6);
+    const loadData = async () => {
+      const endDate = new Date();
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - 27); // Last 4 weeks
       
-      const blocks = getTimeBlocksForDateRange(weekStart, weekEnd);
-      const stats = getCategoryStats(blocks);
+      const categories = await getCategories();
       
-      const weekData: any = { week: `${4 - i}주차` };
-      Object.entries(stats).forEach(([category, hours]) => {
+      // Calculate weekly data
+      const weeks: any[] = [];
+      for (let i = 0; i < 4; i++) {
+        const weekEnd = new Date(endDate);
+        weekEnd.setDate(weekEnd.getDate() - (i * 7));
+        const weekStart = new Date(weekEnd);
+        weekStart.setDate(weekStart.getDate() - 6);
+        
+        const blocks = await getTimeBlocksForDateRange(weekStart, weekEnd);
+        const stats = getCategoryStats(blocks);
+        
+        const weekData: any = { week: `${4 - i}주차` };
+        Object.entries(stats).forEach(([category, hours]) => {
+          const categoryInfo = categories.find((c: any) => c.value === category);
+          weekData[categoryInfo?.label || category] = Math.round(hours * 10) / 10;
+        });
+        
+        weeks.unshift(weekData);
+      }
+      setWeeklyData(weeks);
+      
+      // Calculate category totals
+      const allBlocks = await getTimeBlocksForDateRange(startDate, endDate);
+      const totalStats = getCategoryStats(allBlocks);
+      
+      const totals = Object.entries(totalStats).map(([category, hours]) => {
         const categoryInfo = categories.find((c: any) => c.value === category);
-        weekData[categoryInfo?.label || category] = Math.round(hours * 10) / 10;
+        return {
+          name: categoryInfo?.label || category,
+          value: Math.round(hours * 10) / 10,
+          color: CATEGORY_COLORS[category] || "hsl(var(--muted))",
+        };
       });
-      
-      weeks.unshift(weekData);
-    }
-    setWeeklyData(weeks);
+      setCategoryTotal(totals);
+    };
     
-    // Calculate category totals
-    const allBlocks = getTimeBlocksForDateRange(startDate, endDate);
-    const totalStats = getCategoryStats(allBlocks);
-    
-    const totals = Object.entries(totalStats).map(([category, hours]) => {
-      const categoryInfo = categories.find((c: any) => c.value === category);
-      return {
-        name: categoryInfo?.label || category,
-        value: Math.round(hours * 10) / 10,
-        color: CATEGORY_COLORS[category] || "hsl(var(--muted))",
-      };
-    });
-    setCategoryTotal(totals);
+    loadData();
   }, []);
   
   const totalHours = categoryTotal.reduce((sum, cat) => sum + cat.value, 0);

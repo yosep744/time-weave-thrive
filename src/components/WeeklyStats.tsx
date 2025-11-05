@@ -17,24 +17,28 @@ export const WeeklyStats = () => {
   const [chartData, setChartData] = useState<any[]>([]);
   
   useEffect(() => {
-    const endDate = new Date();
-    const startDate = new Date();
-    startDate.setDate(startDate.getDate() - 6); // Last 7 days
+    const loadData = async () => {
+      const endDate = new Date();
+      const startDate = new Date();
+      startDate.setDate(startDate.getDate() - 6); // Last 7 days
+      
+      const blocks = await getTimeBlocksForDateRange(startDate, endDate);
+      const stats = getCategoryStats(blocks);
+      const categories = await getCategories();
+      
+      const data = Object.entries(stats).map(([category, hours]) => {
+        const categoryInfo = categories.find((c: any) => c.value === category);
+        return {
+          category: categoryInfo?.label || category,
+          hours: Math.round(hours * 10) / 10,
+          color: CATEGORY_COLORS[category] || "hsl(var(--muted))",
+        };
+      });
+      
+      setChartData(data);
+    };
     
-    const blocks = getTimeBlocksForDateRange(startDate, endDate);
-    const stats = getCategoryStats(blocks);
-    const categories = getCategories();
-    
-    const data = Object.entries(stats).map(([category, hours]) => {
-      const categoryInfo = categories.find((c: any) => c.value === category);
-      return {
-        category: categoryInfo?.label || category,
-        hours: Math.round(hours * 10) / 10,
-        color: CATEGORY_COLORS[category] || "hsl(var(--muted))",
-      };
-    });
-    
-    setChartData(data);
+    loadData();
   }, []);
   
   const totalHours = chartData.reduce((sum, item) => sum + item.hours, 0);
