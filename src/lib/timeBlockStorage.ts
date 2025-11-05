@@ -2,6 +2,16 @@ import { TimeBlockExport } from "@/components/TimeEntry";
 
 export const saveTimeBlock = (date: string, blocks: any[]) => {
   localStorage.setItem(`timeBlocks-${date}`, JSON.stringify(blocks));
+  
+  // Trigger real-time sync to Google Sheets if auto-sync is enabled
+  const autoSyncEnabled = localStorage.getItem('autoSyncEnabled') === 'true';
+  if (autoSyncEnabled) {
+    import('./googleSheetsSync').then(({ syncToGoogleSheets }) => {
+      syncToGoogleSheets(false).catch(err => {
+        console.error('Failed to sync to Google Sheets:', err);
+      });
+    });
+  }
 };
 
 export const getTimeBlock = (date: string) => {

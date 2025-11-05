@@ -6,8 +6,8 @@ import { Label } from "@/components/ui/label";
 import { Upload, Download, Cloud, RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
-import { getTimeBlocksForDateRange } from "@/lib/timeBlockStorage";
 import { saveTimeBlock } from "@/lib/timeBlockStorage";
+import { syncToGoogleSheets } from "@/lib/googleSheetsSync";
 
 const AUTO_SYNC_KEY = "autoSyncEnabled";
 const LAST_SYNC_KEY = "lastSyncTime";
@@ -52,12 +52,12 @@ export const GoogleSheetsSync = () => {
     
     if (enabled) {
       toast({
-        title: "자동 동기화 활성화",
-        description: "1시간마다 자동으로 Google Sheets에 업로드됩니다.",
+        title: "실시간 동기화 활성화",
+        description: "블록을 추가/수정할 때마다 Google Sheets에 즉시 업로드됩니다.",
       });
     } else {
       toast({
-        title: "자동 동기화 비활성화",
+        title: "실시간 동기화 비활성화",
         description: "수동으로만 동기화됩니다.",
       });
     }
@@ -66,14 +66,9 @@ export const GoogleSheetsSync = () => {
   const handleUpload = async (isAutoSync = false) => {
     setIsUploading(true);
     try {
-      // Get all time blocks from the last 30 days
-      const endDate = new Date();
-      const startDate = new Date();
-      startDate.setDate(startDate.getDate() - 30);
+      const result = await syncToGoogleSheets(!isAutoSync);
       
-      const blocks = getTimeBlocksForDateRange(startDate, endDate);
-      
-      if (blocks.length === 0) {
+      if (!result.success) {
         if (!isAutoSync) {
           toast({
             title: "데이터 없음",
@@ -84,20 +79,14 @@ export const GoogleSheetsSync = () => {
         return;
       }
 
-      const { data, error } = await supabase.functions.invoke('sync-google-sheets', {
-        body: { action: 'upload', data: blocks }
-      });
-
-      if (error) throw error;
-
       const now = new Date();
       setLastSync(now);
       localStorage.setItem(LAST_SYNC_KEY, now.toISOString());
 
-      if (!isAutoSync) {
+      if (result.showToast) {
         toast({
           title: "업로드 완료",
-          description: `${data.rowsAdded}개의 시간 기록이 Google Sheets에 업로드되었습니다.`,
+          description: `${result.data.rowsAdded}개의 시간 기록이 Google Sheets에 업로드되었습니다.`,
         });
       }
     } catch (error) {
@@ -191,9 +180,9 @@ export const GoogleSheetsSync = () => {
           <RefreshCw className={`h-4 w-4 ${autoSync ? 'text-primary animate-spin-slow' : 'text-muted-foreground'}`} />
           <div>
             <Label htmlFor="auto-sync" className="cursor-pointer font-medium">
-              자동 동기화
+              실시간 동기화
             </Label>
-            <p className="text-xs text-muted-foreground">1시간마다 자동 업로드</p>
+            <p className="text-xs text-muted-foreground">블록 추가/수정 시 즉시 업로드</p>
           </div>
         </div>
         <Switch
