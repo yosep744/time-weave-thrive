@@ -3,10 +3,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Clock } from "lucide-react";
 import { getTimeBlock, getCategories } from "@/lib/timeBlockStorage";
+import { calculateCategoryTotals } from "@/lib/timeCalculations";
 
 interface CategoryTime {
   label: string;
   hours: number;
+  displayText: string;
   color: string;
 }
 
@@ -22,54 +24,28 @@ export const CategoryTimeTable = () => {
         getCategories()
       ]);
 
-      const categoryMap = new Map<string, number>();
-      
-      blocks.forEach((block) => {
-        if (!block.startTime || !block.endTime) return;
-        
-        const [startHour, startMin] = block.startTime.split(':').map(Number);
-        const [endHour, endMin] = block.endTime.split(':').map(Number);
-        
-        // Validate parsed values
-        if (isNaN(startHour) || isNaN(startMin) || isNaN(endHour) || isNaN(endMin)) {
-          console.warn('Invalid time format:', block.startTime, block.endTime);
-          return;
-        }
-        
-        const startMinutes = startHour * 60 + startMin;
-        const endMinutes = endHour * 60 + endMin;
-        
-        // Calculate duration (handle overnight blocks)
-        let durationMinutes = endMinutes - startMinutes;
-        if (durationMinutes < 0) {
-          durationMinutes += 24 * 60; // Add 24 hours for overnight blocks
-        }
-        
-        // Validate duration (must be positive and less than 24 hours)
-        if (durationMinutes <= 0 || durationMinutes > 24 * 60) {
-          console.warn('Invalid duration:', durationMinutes, 'minutes for block:', block);
-          return;
-        }
-        
-        const durationHours = durationMinutes / 60;
-        
-        const current = categoryMap.get(block.category) || 0;
-        categoryMap.set(block.category, current + durationHours);
-      });
+      // Use the new calculation utility
+      const categoryTotals = calculateCategoryTotals(blocks);
 
-      const total = Array.from(categoryMap.values()).reduce((sum, val) => sum + val, 0);
-      setTotalHours(total);
+      // Calculate total minutes
+      const totalMinutes = Object.values(categoryTotals).reduce(
+        (sum, cat) => sum + cat.totalMinutes,
+        0
+      );
+      setTotalHours(totalMinutes / 60); // Convert to hours for display
 
-      const times: CategoryTime[] = Array.from(categoryMap.entries())
-        .map(([value, hours]) => {
-          const category = categories.find(c => c.value === value);
+      // Map to display format
+      const times: CategoryTime[] = Object.entries(categoryTotals)
+        .filter(([_, data]) => data.totalMinutes > 0)
+        .map(([categoryValue, data]) => {
+          const category = categories.find(c => c.value === categoryValue);
           return {
-            label: category?.label || value,
-            hours: Math.round(hours * 100) / 100, // Round to 2 decimal places
+            label: category?.label || categoryValue,
+            hours: data.totalMinutes / 60, // Convert to hours for backward compatibility
+            displayText: data.displayText, // Use formatted text
             color: category?.color || 'bg-gray-100 text-gray-900 border-gray-300 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600',
           };
         })
-        .filter(item => item.hours > 0) // Only show categories with positive hours
         .sort((a, b) => b.hours - a.hours);
 
       setCategoryTimes(times);
@@ -115,7 +91,7 @@ export const CategoryTimeTable = () => {
                   </span>
                 </TableCell>
                 <TableCell className="text-right font-medium">
-                  {item.hours}시간
+                  {item.displayText}
                 </TableCell>
               </TableRow>
             ))}
