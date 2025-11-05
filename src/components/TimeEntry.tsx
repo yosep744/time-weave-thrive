@@ -443,20 +443,20 @@ export const TimeEntry = () => {
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="relative">
-          <div className="flex gap-4">
-            <div className="w-16 flex-shrink-0">
+          <div className="flex gap-2 md:gap-4">
+            <div className="w-12 md:w-16 flex-shrink-0">
               {Array.from({ length: 24 }, (_, i) => (
-                <div key={i} className="h-16 flex items-start justify-end pr-2 text-xs text-muted-foreground font-medium">
+                <div key={i} className="h-12 md:h-16 flex items-start justify-end pr-1 md:pr-2 text-[10px] md:text-xs text-muted-foreground font-medium">
                   {i.toString().padStart(2, '0')}:00
                 </div>
               ))}
             </div>
 
-            <div className="flex-1 relative">
+            <div className="flex-1 relative min-w-0">
               <div
                 ref={timelineRef}
                 className="relative border border-border rounded-lg bg-card cursor-crosshair"
-                style={{ height: '1536px' }}
+                style={{ height: '1152px' }}
                 onMouseDown={handleTimelineMouseDown}
                 onMouseMove={handleTimelineMouseMove}
                 onMouseUp={handleTimelineMouseUp}
@@ -512,32 +512,32 @@ export const TimeEntry = () => {
                         onMouseDown={(e) => handleBlockResizeStart(e, block.id, 'move')}
                       >
                         {isSelected ? (
-                          <div className="p-2 space-y-2 h-full">
+                          <div className="p-1.5 md:p-2 space-y-1.5 md:space-y-2 h-full">
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-1">
-                                <GripVertical className="h-4 w-4 opacity-50" />
-                                <span className="text-sm font-semibold">편집 중</span>
+                                <GripVertical className="h-3 md:h-4 w-3 md:w-4 opacity-50" />
+                                <span className="text-xs md:text-sm font-semibold">편집 중</span>
                               </div>
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                className="h-6 w-6 p-0 hover:bg-destructive/20"
+                                className="h-5 w-5 md:h-6 md:w-6 p-0 hover:bg-destructive/20"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   removeTimeBlock(block.id);
                                   setSelectedBlock(null);
                                 }}
                               >
-                                <Trash2 className="h-3.5 w-3.5" />
+                                <Trash2 className="h-3 md:h-3.5 w-3 md:w-3.5" />
                               </Button>
                             </div>
                             
-                            <div className="grid grid-cols-2 gap-1.5">
+                            <div className="grid grid-cols-2 gap-1 md:gap-1.5">
                               <Select
                                 value={block.startTime}
                                 onValueChange={(value) => updateTimeBlock(block.id, "startTime", value)}
                               >
-                                <SelectTrigger className="h-8 text-xs" onClick={(e) => e.stopPropagation()}>
+                                <SelectTrigger className="h-7 md:h-8 text-[10px] md:text-xs" onClick={(e) => e.stopPropagation()}>
                                   <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent className="max-h-48">
@@ -553,7 +553,7 @@ export const TimeEntry = () => {
                                 value={block.endTime}
                                 onValueChange={(value) => updateTimeBlock(block.id, "endTime", value)}
                               >
-                                <SelectTrigger className="h-8 text-xs" onClick={(e) => e.stopPropagation()}>
+                                <SelectTrigger className="h-7 md:h-8 text-[10px] md:text-xs" onClick={(e) => e.stopPropagation()}>
                                   <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent className="max-h-48">
@@ -566,12 +566,12 @@ export const TimeEntry = () => {
                               </Select>
                             </div>
                             
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-1 md:gap-2 min-w-0">
                               <Select
                                 value={block.category}
                                 onValueChange={(value) => updateTimeBlock(block.id, "category", value)}
                               >
-                                <SelectTrigger className="h-8 text-xs w-24" onClick={(e) => e.stopPropagation()}>
+                                <SelectTrigger className="h-7 md:h-8 text-[10px] md:text-xs w-20 md:w-24 flex-shrink-0" onClick={(e) => e.stopPropagation()}>
                                   <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -589,26 +589,24 @@ export const TimeEntry = () => {
                                 placeholder="활동 내용"
                                 value={block.activity}
                                 onChange={(e) => updateTimeBlock(block.id, "activity", e.target.value)}
-                                className="h-8 text-xs flex-1 bg-background/50"
+                                className="h-7 md:h-8 text-[10px] md:text-xs flex-1 min-w-0 bg-background/50"
                                 onClick={(e) => e.stopPropagation()}
                               />
                             </div>
                           </div>
                         ) : (
-                          <div className="px-2.5 py-2 h-full flex flex-col gap-1">
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-1.5 flex-1 min-w-0">
-                                <span className="font-semibold text-sm truncate">{getCategoryLabel(block.category)}</span>
-                                {block.activity && (
-                                  <>
-                                    <span className="text-xs opacity-50">•</span>
-                                    <span className="text-xs opacity-90 truncate flex-1">{block.activity}</span>
-                                  </>
-                                )}
-                              </div>
-                              <GripVertical className="h-3.5 w-3.5 opacity-30 flex-shrink-0 ml-1" />
+                          <div className="px-2 md:px-2.5 py-1.5 md:py-2 h-full flex flex-col gap-0.5 md:gap-1">
+                            <div className="flex items-center gap-1 md:gap-1.5 min-w-0 overflow-hidden">
+                              <span className="font-semibold text-xs md:text-sm flex-shrink-0">{getCategoryLabel(block.category)}</span>
+                              {block.activity && (
+                                <>
+                                  <span className="text-[10px] md:text-xs opacity-50 flex-shrink-0">•</span>
+                                  <span className="text-[10px] md:text-xs opacity-90 truncate flex-1 min-w-0">{block.activity}</span>
+                                </>
+                              )}
+                              <GripVertical className="h-3 md:h-3.5 w-3 md:w-3.5 opacity-30 flex-shrink-0 ml-auto" />
                             </div>
-                            <div className="text-xs opacity-75 font-medium">
+                            <div className="text-[10px] md:text-xs opacity-75 font-medium">
                               {block.startTime} - {block.endTime}
                             </div>
                           </div>
@@ -629,7 +627,7 @@ export const TimeEntry = () => {
             </div>
           </div>
           
-          <p className="text-xs text-muted-foreground mt-2 text-center">
+          <p className="text-[10px] md:text-xs text-muted-foreground mt-2 text-center">
             💡 드래그하여 블록 추가 • 위/아래 드래그로 크기 조정 • 블록 드래그로 이동 • 클릭하여 편집
           </p>
         </div>
