@@ -6,6 +6,7 @@ import { DailyReflection } from "@/components/DailyReflection";
 import { WeeklyStats } from "@/components/WeeklyStats";
 import { MonthlyStats } from "@/components/MonthlyStats";
 import { TodayAnalysis } from "@/components/TodayAnalysis";
+import { CategoryTimeTable } from "@/components/CategoryTimeTable";
 import { useGoogleSheetsSync } from "@/hooks/useGoogleSheetsSync";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -130,6 +131,7 @@ const Index = () => {
             <div className="grid lg:grid-cols-2 gap-6">
               <div className="space-y-6">
                 <TimeEntry />
+                <CategoryTimeTable />
               </div>
               
               <div className="space-y-6">
