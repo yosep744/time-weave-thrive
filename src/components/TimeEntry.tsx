@@ -113,11 +113,17 @@ export const TimeEntry = () => {
     if (isInitialLoad) return;
     
     const saveData = async () => {
-      const { saveTimeBlock } = await import('@/lib/timeBlockStorage');
-      await saveTimeBlock(today, timeBlocks);
+      try {
+        const { saveTimeBlock } = await import('@/lib/timeBlockStorage');
+        await saveTimeBlock(today, timeBlocks);
+      } catch (error) {
+        console.error('Failed to save time blocks:', error);
+        toast.error('시간 블록 저장에 실패했습니다');
+      }
     };
     
-    saveData();
+    const timeoutId = setTimeout(saveData, 300);
+    return () => clearTimeout(timeoutId);
   }, [timeBlocks, today, isInitialLoad]);
 
   useEffect(() => {
@@ -131,46 +137,8 @@ export const TimeEntry = () => {
     saveData();
   }, [categories, isInitialLoad]);
 
-  useEffect(() => {
-    if (isInitialLoad) return;
-    
-    const channel = supabase
-      .channel('time_blocks_changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'time_blocks',
-          filter: `date=eq.${today}`
-        },
-        async () => {
-          const { getTimeBlock } = await import('@/lib/timeBlockStorage');
-          const blocks = await getTimeBlock(today);
-          setTimeBlocks(blocks);
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'categories'
-        },
-        async () => {
-          const { getCategories } = await import('@/lib/timeBlockStorage');
-          const cats = await getCategories();
-          if (cats.length > 0) {
-            setCategories(cats);
-          }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [today, isInitialLoad]);
+  // Real-time sync disabled to prevent conflicts with local edits
+  // Data will be reloaded when user refreshes or navigates away and back
 
   const removeTimeBlock = (id: string) => {
     setTimeBlocks(timeBlocks.filter((block) => block.id !== id));

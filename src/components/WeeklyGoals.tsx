@@ -64,34 +64,18 @@ export function WeeklyGoals() {
         return;
       }
 
-      // Check if record exists
-      const { data: existing } = await supabase
+      // Use upsert for faster saving
+      const { error } = await supabase
         .from('weekly_goals')
-        .select('id')
-        .eq('user_id', user.id)
-        .eq('week_start', weekStart)
-        .maybeSingle();
+        .upsert({
+          user_id: user.id,
+          week_start: weekStart,
+          goals
+        }, {
+          onConflict: 'user_id,week_start'
+        });
 
-      if (existing) {
-        // Update existing record
-        const { error } = await supabase
-          .from('weekly_goals')
-          .update({ goals })
-          .eq('id', existing.id);
-
-        if (error) throw error;
-      } else {
-        // Insert new record
-        const { error } = await supabase
-          .from('weekly_goals')
-          .insert({
-            user_id: user.id,
-            week_start: weekStart,
-            goals
-          });
-
-        if (error) throw error;
-      }
+      if (error) throw error;
 
       toast.success('목표가 저장되었습니다');
       setIsEditing(false);

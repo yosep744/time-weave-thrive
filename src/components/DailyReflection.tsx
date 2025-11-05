@@ -35,30 +35,7 @@ export const DailyReflection = () => {
     loadReflection();
   }, [today]);
 
-  // Real-time sync
-  useEffect(() => {
-    const channel = supabase
-      .channel('reflection_changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'reflections',
-          filter: `date=eq.${today}`
-        },
-        async (payload) => {
-          if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
-            setReflection((payload.new as any).content);
-          }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [today]);
+  // Real-time sync disabled to prevent conflicts with local edits
 
   const handleSave = async () => {
     if (!reflection.trim()) {

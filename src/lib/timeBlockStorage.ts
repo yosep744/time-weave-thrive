@@ -3,39 +3,41 @@ import { supabase } from "@/integrations/supabase/client";
 
 export const saveTimeBlock = async (date: string, blocks: any[]) => {
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error("User not authenticated");
-
-  // Delete existing blocks for this date and user
-  await supabase
-    .from('time_blocks')
-    .delete()
-    .eq('date', date)
-    .eq('user_id', user.id);
-
-  // Insert new blocks
-  if (blocks.length > 0) {
-    const blocksToInsert = blocks.map(block => ({
-      date,
-      start_time: block.startTime,
-      end_time: block.endTime,
-      category: block.category,
-      activity: block.activity || null,
-      user_id: user.id,
-    }));
-
-    await supabase
-      .from('time_blocks')
-      .insert(blocksToInsert);
+  if (!user) {
+    console.warn("User not authenticated - skipping save");
+    return;
   }
 
-  // Trigger real-time sync to Google Sheets if auto-sync is enabled
-  const autoSyncEnabled = localStorage.getItem('autoSyncEnabled') === 'true';
-  if (autoSyncEnabled) {
-    import('./googleSheetsSync').then(({ syncToGoogleSheets }) => {
-      syncToGoogleSheets(false).catch(err => {
-        console.error('Failed to sync to Google Sheets:', err);
-      });
-    });
+  try {
+    // Delete existing blocks for this date and user
+    const { error: deleteError } = await supabase
+      .from('time_blocks')
+      .delete()
+      .eq('date', date)
+      .eq('user_id', user.id);
+
+    if (deleteError) throw deleteError;
+
+    // Insert new blocks
+    if (blocks.length > 0) {
+      const blocksToInsert = blocks.map(block => ({
+        date,
+        start_time: block.startTime,
+        end_time: block.endTime,
+        category: block.category,
+        activity: block.activity || null,
+        user_id: user.id,
+      }));
+
+      const { error: insertError } = await supabase
+        .from('time_blocks')
+        .insert(blocksToInsert);
+
+      if (insertError) throw insertError;
+    }
+  } catch (error) {
+    console.error('Error saving time blocks:', error);
+    throw error;
   }
 };
 
