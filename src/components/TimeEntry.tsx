@@ -81,6 +81,7 @@ export const TimeEntry = () => {
   const [resizeMode, setResizeMode] = useState<ResizeMode>(null);
   const [resizeStartY, setResizeStartY] = useState<number>(0);
   const [resizeStartTime, setResizeStartTime] = useState<{ start: string; end: string } | null>(null);
+  const [isSelectOpen, setIsSelectOpen] = useState<boolean>(false);
   
   const timelineRef = useRef<HTMLDivElement>(null);
 
@@ -221,6 +222,9 @@ export const TimeEntry = () => {
   };
 
   const handleTimelineMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    // Prevent interfering with Select dropdown interactions
+    if (isSelectOpen) return;
+    
     if (resizingBlock && resizeMode && timelineRef.current) {
       const rect = timelineRef.current.getBoundingClientRect();
       const y = e.clientY - rect.top;
@@ -466,34 +470,35 @@ export const TimeEntry = () => {
                         onMouseDown={(e) => handleBlockResizeStart(e, block.id, 'move')}
                       >
                         {isSelected ? (
-                          <div className="p-2 md:p-3 space-y-2 md:space-y-3 h-full bg-background rounded">
-                            <div className="flex items-center justify-between mb-1 bg-primary/10 p-2 rounded">
-                              <div className="flex items-center gap-1.5">
-                                <GripVertical className="h-4 w-4 text-primary" />
-                                <span className="text-xs md:text-sm font-bold text-primary">시간 블록 편집</span>
+                          <div className="p-2 space-y-1.5 overflow-auto max-h-full bg-background rounded">
+                            <div className="flex items-center justify-between bg-primary/10 p-1.5 rounded sticky top-0 z-10 bg-background">
+                              <div className="flex items-center gap-1">
+                                <GripVertical className="h-3.5 w-3.5 text-primary" />
+                                <span className="text-xs font-bold text-primary">편집</span>
                               </div>
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                className="h-6 w-6 md:h-7 md:w-7 p-0 hover:bg-destructive hover:text-destructive-foreground"
+                                className="h-5 w-5 p-0 hover:bg-destructive hover:text-destructive-foreground"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   removeTimeBlock(block.id);
                                   setSelectedBlock(null);
                                 }}
                               >
-                                <Trash2 className="h-3.5 md:h-4 w-3.5 md:w-4" />
+                                <Trash2 className="h-3 w-3" />
                               </Button>
                             </div>
                             
-                            <div className="grid grid-cols-2 gap-2 bg-muted/50 p-2 rounded">
+                            <div className="grid grid-cols-2 gap-1.5">
                               <div>
-                                <label className="text-[10px] font-medium text-muted-foreground mb-1 block">시작</label>
+                                <label className="text-[9px] font-medium text-muted-foreground mb-0.5 block">시작</label>
                                 <Select
                                   value={block.startTime}
                                   onValueChange={(value) => updateTimeBlock(block.id, "startTime", value)}
+                                  onOpenChange={(open) => setIsSelectOpen(open)}
                                 >
-                                  <SelectTrigger className="h-8 md:h-9 text-xs md:text-sm bg-background" onClick={(e) => e.stopPropagation()}>
+                                  <SelectTrigger className="h-7 text-xs bg-background" onClick={(e) => e.stopPropagation()}>
                                     <SelectValue />
                                   </SelectTrigger>
                                   <SelectContent className="max-h-48">
@@ -507,12 +512,13 @@ export const TimeEntry = () => {
                               </div>
                               
                               <div>
-                                <label className="text-[10px] font-medium text-muted-foreground mb-1 block">종료</label>
+                                <label className="text-[9px] font-medium text-muted-foreground mb-0.5 block">종료</label>
                                 <Select
                                   value={block.endTime}
                                   onValueChange={(value) => updateTimeBlock(block.id, "endTime", value)}
+                                  onOpenChange={(open) => setIsSelectOpen(open)}
                                 >
-                                  <SelectTrigger className="h-8 md:h-9 text-xs md:text-sm bg-background" onClick={(e) => e.stopPropagation()}>
+                                  <SelectTrigger className="h-7 text-xs bg-background" onClick={(e) => e.stopPropagation()}>
                                     <SelectValue />
                                   </SelectTrigger>
                                   <SelectContent className="max-h-48">
@@ -526,38 +532,37 @@ export const TimeEntry = () => {
                               </div>
                             </div>
                             
-                            <div className="space-y-2">
-                              <div>
-                                <label className="text-[10px] font-medium text-muted-foreground mb-1 block">카테고리</label>
-                                <Select
-                                  value={block.category}
-                                  onValueChange={(value) => updateTimeBlock(block.id, "category", value)}
-                                >
-                                  <SelectTrigger className="h-8 md:h-9 text-xs md:text-sm bg-background" onClick={(e) => e.stopPropagation()}>
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {categories.map((cat) => (
-                                      <SelectItem key={cat.value} value={cat.value}>
-                                        <span className={`px-2 py-1 rounded-md text-xs ${cat.color}`}>
-                                          {cat.label}
-                                        </span>
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                              
-                              <div>
-                                <label className="text-[10px] font-medium text-muted-foreground mb-1 block">활동 내용</label>
-                                <Input
-                                  placeholder="무엇을 했나요?"
-                                  value={block.activity}
-                                  onChange={(e) => updateTimeBlock(block.id, "activity", e.target.value)}
-                                  className="h-8 md:h-9 text-xs md:text-sm bg-background"
-                                  onClick={(e) => e.stopPropagation()}
-                                />
-                              </div>
+                            <div>
+                              <label className="text-[9px] font-medium text-muted-foreground mb-0.5 block">카테고리</label>
+                              <Select
+                                value={block.category}
+                                onValueChange={(value) => updateTimeBlock(block.id, "category", value)}
+                                onOpenChange={(open) => setIsSelectOpen(open)}
+                              >
+                                <SelectTrigger className="h-7 text-xs bg-background" onClick={(e) => e.stopPropagation()}>
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {categories.map((cat) => (
+                                    <SelectItem key={cat.value} value={cat.value}>
+                                      <span className={`px-2 py-0.5 rounded-md text-xs ${cat.color}`}>
+                                        {cat.label}
+                                      </span>
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            
+                            <div>
+                              <label className="text-[9px] font-medium text-muted-foreground mb-0.5 block">활동</label>
+                              <Input
+                                placeholder="무엇을 했나요?"
+                                value={block.activity}
+                                onChange={(e) => updateTimeBlock(block.id, "activity", e.target.value)}
+                                className="h-7 text-xs bg-background"
+                                onClick={(e) => e.stopPropagation()}
+                              />
                             </div>
                           </div>
                         ) : (
