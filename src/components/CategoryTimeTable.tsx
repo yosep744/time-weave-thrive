@@ -19,61 +19,63 @@ export const CategoryTimeTable = () => {
 
   useEffect(() => {
     const loadData = async () => {
-      const [blocks, categories] = await Promise.all([
-        getTimeBlock(today),
-        getCategories()
-      ]);
+      try {
+        const [blocks, categories] = await Promise.all([
+          getTimeBlock(today),
+          getCategories()
+        ]);
 
-      // Use the new calculation utility
-      const categoryTotals = calculateCategoryTotals(blocks);
+        // Ensure we have categories
+        if (categories.length === 0) {
+          console.warn('No categories found, data might not display correctly');
+        }
 
-      // Calculate total minutes
-      const totalMinutes = Object.values(categoryTotals).reduce(
-        (sum, cat) => sum + cat.totalMinutes,
-        0
-      );
-      setTotalHours(totalMinutes / 60); // Convert to hours for display
+        // Use the new calculation utility
+        const categoryTotals = calculateCategoryTotals(blocks);
 
-      // Map to display format
-      const times: CategoryTime[] = Object.entries(categoryTotals)
-        .filter(([_, data]) => data.totalMinutes > 0)
-        .map(([categoryValue, data]) => {
-          const category = categories.find(c => c.value === categoryValue);
-          return {
-            label: category?.label || categoryValue,
-            hours: data.totalMinutes / 60, // Convert to hours for backward compatibility
-            displayText: data.displayText, // Use formatted text
-            color: category?.color || 'bg-gray-100 text-gray-900 border-gray-300 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600',
-          };
-        })
-        .sort((a, b) => b.hours - a.hours);
+        // Calculate total minutes
+        const totalMinutes = Object.values(categoryTotals).reduce(
+          (sum, cat) => sum + cat.totalMinutes,
+          0
+        );
+        setTotalHours(totalMinutes / 60);
 
-      setCategoryTimes(times);
+        // Map to display format with better category matching
+        const times: CategoryTime[] = Object.entries(categoryTotals)
+          .filter(([_, data]) => data.totalMinutes > 0)
+          .map(([categoryValue, data]) => {
+            // Find matching category
+            const category = categories.find(c => c.value === categoryValue);
+            
+            return {
+              label: category?.label || categoryValue, // Fallback to value if not found
+              hours: data.totalMinutes / 60,
+              displayText: data.displayText,
+              color: category?.color || 'bg-gray-100 text-gray-900 border-gray-300 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600',
+            };
+          })
+          .sort((a, b) => b.hours - a.hours);
+
+        setCategoryTimes(times);
+      } catch (error) {
+        console.error('Error loading category time data:', error);
+      }
     };
 
     loadData();
-
-    // Listen for localStorage changes for instant updates
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key?.includes('timeBlocks') || e.key?.includes('categories')) {
-        loadData();
-      }
-    };
 
     // Listen for custom events from same tab
     const handleCustomUpdate = () => {
       loadData();
     };
 
-    window.addEventListener('storage', handleStorageChange);
     window.addEventListener('timeBlocksUpdated', handleCustomUpdate);
 
-    // Poll every 2 seconds for immediate updates (reduced from 10s)
+    // Poll every 2 seconds for immediate updates
     const interval = setInterval(loadData, 2000);
     
     return () => {
       clearInterval(interval);
-      window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('timeBlocksUpdated', handleCustomUpdate);
     };
   }, [today]);
@@ -107,7 +109,7 @@ export const CategoryTimeTable = () => {
             {categoryTimes.map((item, index) => (
               <TableRow key={index}>
                 <TableCell>
-                  <span className={`px-3 py-1 rounded-md text-sm font-medium ${item.color}`}>
+                  <span className={`inline-flex items-center px-3 py-1.5 rounded-md text-sm font-medium border ${item.color}`}>
                     {item.label}
                   </span>
                 </TableCell>
