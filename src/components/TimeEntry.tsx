@@ -242,8 +242,9 @@ export const TimeEntry = () => {
     };
 
     setTimeBlocks([...timeBlocks, newBlock]);
-    setSelectedBlock(newBlock.id);
-    toast.success("새 시간 블록이 추가되었습니다");
+    // Open edit dialog immediately
+    setEditingBlock(newBlock);
+    setIsEditDialogOpen(true);
   };
 
   const handleTimelineMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {

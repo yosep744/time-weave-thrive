@@ -53,8 +53,29 @@ export const CategoryTimeTable = () => {
 
     loadData();
 
-    const interval = setInterval(loadData, 10000);
-    return () => clearInterval(interval);
+    // Listen for localStorage changes for instant updates
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key?.includes('timeBlocks') || e.key?.includes('categories')) {
+        loadData();
+      }
+    };
+
+    // Listen for custom events from same tab
+    const handleCustomUpdate = () => {
+      loadData();
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('timeBlocksUpdated', handleCustomUpdate);
+
+    // Poll every 2 seconds for immediate updates (reduced from 10s)
+    const interval = setInterval(loadData, 2000);
+    
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('timeBlocksUpdated', handleCustomUpdate);
+    };
   }, [today]);
 
   if (categoryTimes.length === 0) {

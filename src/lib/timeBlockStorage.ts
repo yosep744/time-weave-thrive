@@ -35,6 +35,9 @@ export const saveTimeBlock = async (date: string, blocks: any[]) => {
 
       if (insertError) throw insertError;
     }
+
+    // Dispatch custom event for instant UI updates
+    window.dispatchEvent(new CustomEvent('timeBlocksUpdated'));
   } catch (error) {
     console.error('Error saving time blocks:', error);
     throw error;
@@ -161,4 +164,7 @@ export const saveCategories = async (categories: any[]) => {
         ignoreDuplicates: false 
       });
   }
+
+  // Dispatch custom event for instant UI updates
+  window.dispatchEvent(new CustomEvent('timeBlocksUpdated'));
 };
