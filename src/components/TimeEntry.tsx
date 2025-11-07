@@ -102,8 +102,18 @@ export const TimeEntry = () => {
       if (cats.length > 0) {
         setCategories(cats);
       } else {
+        // If no categories exist, create Korean defaults
+        const koreanCategories = [
+          { value: "work", label: "업무", color: "bg-blue-100 text-blue-900 border-blue-300 dark:bg-blue-900/40 dark:text-blue-100 dark:border-blue-700" },
+          { value: "study", label: "공부", color: "bg-purple-100 text-purple-900 border-purple-300 dark:bg-purple-900/40 dark:text-purple-100 dark:border-purple-700" },
+          { value: "exercise", label: "운동", color: "bg-green-100 text-green-900 border-green-300 dark:bg-green-900/40 dark:text-green-100 dark:border-green-700" },
+          { value: "meal", label: "식사", color: "bg-orange-100 text-orange-900 border-orange-300 dark:bg-orange-900/40 dark:text-orange-100 dark:border-orange-700" },
+          { value: "rest", label: "휴식", color: "bg-pink-100 text-pink-900 border-pink-300 dark:bg-pink-900/40 dark:text-pink-100 dark:border-pink-700" },
+          { value: "other", label: "기타", color: "bg-gray-100 text-gray-900 border-gray-300 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600" },
+        ];
+        setCategories(koreanCategories);
         const { saveCategories } = await import('@/lib/timeBlockStorage');
-        await saveCategories(DEFAULT_CATEGORIES);
+        await saveCategories(koreanCategories);
       }
       
       setIsInitialLoad(false);
@@ -162,12 +172,15 @@ export const TimeEntry = () => {
 
   const updateEditingBlock = (field: keyof TimeBlock, value: string) => {
     if (editingBlock) {
-      setEditingBlock({ ...editingBlock, [field]: value });
+      const updated = { ...editingBlock, [field]: value };
+      setEditingBlock(updated);
+      console.log('Updated editing block:', field, value, updated); // Debug log
     }
   };
 
   const handleSaveEditingBlock = () => {
     if (editingBlock) {
+      console.log('Saving block with category:', editingBlock.category); // Debug log
       updateTimeBlock(editingBlock.id, 'startTime', editingBlock.startTime);
       updateTimeBlock(editingBlock.id, 'endTime', editingBlock.endTime);
       updateTimeBlock(editingBlock.id, 'category', editingBlock.category);

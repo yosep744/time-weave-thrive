@@ -25,10 +25,15 @@ export const CategoryTimeTable = () => {
           getCategories()
         ]);
 
-        // Ensure we have categories
-        if (categories.length === 0) {
-          console.warn('No categories found, data might not display correctly');
-        }
+        // If no categories, use Korean defaults
+        const activeCategories = categories.length > 0 ? categories : [
+          { value: "work", label: "업무", color: "bg-blue-100 text-blue-900 border-blue-300 dark:bg-blue-900/40 dark:text-blue-100 dark:border-blue-700" },
+          { value: "study", label: "공부", color: "bg-purple-100 text-purple-900 border-purple-300 dark:bg-purple-900/40 dark:text-purple-100 dark:border-purple-700" },
+          { value: "exercise", label: "운동", color: "bg-green-100 text-green-900 border-green-300 dark:bg-green-900/40 dark:text-green-100 dark:border-green-700" },
+          { value: "meal", label: "식사", color: "bg-orange-100 text-orange-900 border-orange-300 dark:bg-orange-900/40 dark:text-orange-100 dark:border-orange-700" },
+          { value: "rest", label: "휴식", color: "bg-pink-100 text-pink-900 border-pink-300 dark:bg-pink-900/40 dark:text-pink-100 dark:border-pink-700" },
+          { value: "other", label: "기타", color: "bg-gray-100 text-gray-900 border-gray-300 dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600" },
+        ];
 
         // Use the new calculation utility
         const categoryTotals = calculateCategoryTotals(blocks);
@@ -45,7 +50,7 @@ export const CategoryTimeTable = () => {
           .filter(([_, data]) => data.totalMinutes > 0)
           .map(([categoryValue, data]) => {
             // Find matching category
-            const category = categories.find(c => c.value === categoryValue);
+            const category = activeCategories.find(c => c.value === categoryValue);
             
             return {
               label: category?.label || categoryValue, // Fallback to value if not found
