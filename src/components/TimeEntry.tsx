@@ -123,12 +123,19 @@ export const TimeEntry = () => {
   }, [today]);
 
   useEffect(() => {
-    if (isInitialLoad) return;
+    if (isInitialLoad) {
+      console.log('Skipping save - initial load');
+      return;
+    }
+    
+    console.log('Time blocks changed, will save in 300ms:', timeBlocks.length); // Debug log
     
     const saveData = async () => {
       try {
+        console.log('Saving time blocks to database...'); // Debug log
         const { saveTimeBlock } = await import('@/lib/timeBlockStorage');
         await saveTimeBlock(today, timeBlocks);
+        console.log('Time blocks saved successfully'); // Debug log
       } catch (error) {
         console.error('Failed to save time blocks:', error);
         toast.error('시간 블록 저장에 실패했습니다');
@@ -167,6 +174,7 @@ export const TimeEntry = () => {
       return a.startTime.localeCompare(b.startTime);
     });
     
+    console.log('Updating time block:', id, field, value); // Debug log
     setTimeBlocks(updatedBlocks);
   };
 
@@ -181,10 +189,29 @@ export const TimeEntry = () => {
   const handleSaveEditingBlock = () => {
     if (editingBlock) {
       console.log('Saving block with category:', editingBlock.category); // Debug log
-      updateTimeBlock(editingBlock.id, 'startTime', editingBlock.startTime);
-      updateTimeBlock(editingBlock.id, 'endTime', editingBlock.endTime);
-      updateTimeBlock(editingBlock.id, 'category', editingBlock.category);
-      updateTimeBlock(editingBlock.id, 'activity', editingBlock.activity);
+      console.log('Current timeBlocks before update:', timeBlocks.map(b => ({ id: b.id, category: b.category }))); // Debug
+      
+      // Update all fields at once
+      const updatedBlocks = timeBlocks.map((block) => 
+        block.id === editingBlock.id 
+          ? {
+              ...block,
+              startTime: editingBlock.startTime,
+              endTime: editingBlock.endTime,
+              category: editingBlock.category,
+              activity: editingBlock.activity
+            }
+          : block
+      );
+      
+      updatedBlocks.sort((a, b) => {
+        if (!a.startTime || !b.startTime) return 0;
+        return a.startTime.localeCompare(b.startTime);
+      });
+      
+      console.log('Updated timeBlocks after update:', updatedBlocks.map(b => ({ id: b.id, category: b.category }))); // Debug
+      setTimeBlocks(updatedBlocks);
+      
       setIsEditDialogOpen(false);
       setEditingBlock(null);
       toast.success("시간 블록이 저장되었습니다");
