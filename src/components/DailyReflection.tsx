@@ -6,6 +6,7 @@ import { BookOpen, Save, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { getTimeBlock } from "@/lib/timeBlockStorage";
+import { HowToUseDialog } from "./HowToUseDialog";
 
 export const DailyReflection = () => {
   const today = new Date().toISOString().split('T')[0];
@@ -143,8 +144,11 @@ export const DailyReflection = () => {
           onChange={(e) => setReflection(e.target.value)}
           className="min-h-[200px] text-base leading-relaxed"
         />
-        <div className="flex justify-between items-center gap-2">
-          <span className="text-sm text-muted-foreground">매일 15분의 성찰 시간</span>
+        <div className="flex justify-between items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">매일 15분, 나를 성찰하는 시간</span>
+            <HowToUseDialog />
+          </div>
           <div className="flex gap-2">
             <Button
               onClick={handleSave}
