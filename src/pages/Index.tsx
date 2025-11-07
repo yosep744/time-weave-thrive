@@ -7,6 +7,7 @@ import { WeeklyStats } from "@/components/WeeklyStats";
 import { MonthlyStats } from "@/components/MonthlyStats";
 import { CategoryTimeTable } from "@/components/CategoryTimeTable";
 import { WeeklyGoals } from "@/components/WeeklyGoals";
+import { HowToUseDialog } from "@/components/HowToUseDialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -142,11 +143,19 @@ const Index = () => {
                     </Button>
                   </div>
                 </div>
-                <div className="glass rounded-xl p-4 inline-block">
-                  <p className="text-sm font-medium flex items-center gap-2">
-                    <Target className="h-4 w-4 text-primary" />
-                    매일 15분, 나를 성찰하는 시간
-                  </p>
+                <div className="glass rounded-xl p-4">
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <p className="text-sm font-medium flex items-center gap-2">
+                      <Target className="h-4 w-4 text-primary" />
+                      매일 15분, 나를 성찰하는 시간
+                    </p>
+                    <div className="flex flex-col sm:flex-row items-center gap-3">
+                      <p className="text-xs text-muted-foreground">
+                        시간을 정복한 사람, 류비셰프의 위대한 업적!
+                      </p>
+                      <HowToUseDialog />
+                    </div>
+                  </div>
                 </div>
               </div>
             </Card>

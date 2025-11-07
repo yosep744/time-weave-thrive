@@ -9,12 +9,12 @@ export const HowToUseDialog = () => {
     <Dialog>
       <DialogTrigger asChild>
         <Button 
-          variant="outline" 
+          variant="default" 
           size="sm"
-          className="border-primary/30 hover:bg-primary/5 hover:border-primary/50"
+          className="bg-gradient-to-r from-primary to-primary/80 hover:shadow-lg whitespace-nowrap"
         >
           <HelpCircle className="h-4 w-4 mr-2" />
-          사용방법
+          시간명세서 사용방법
         </Button>
       </DialogTrigger>
       <DialogContent className="max-w-3xl max-h-[90vh] p-0">
