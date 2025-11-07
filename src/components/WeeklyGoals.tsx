@@ -56,46 +56,61 @@ export function WeeklyGoals() {
   };
 
   const saveGoals = async () => {
+    // Don't save if there are no goals
+    if (goals.length === 0) {
+      toast.error('최소 1개의 목표를 입력해주세요');
+      return;
+    }
+    
     try {
       setIsSaving(true);
-      
-      // Don't save if there are no goals
-      if (goals.length === 0) {
-        toast.error('최소 1개의 목표를 입력해주세요');
-        setIsSaving(false);
-        return;
-      }
-      
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         toast.error('로그인이 필요합니다');
         return;
       }
 
-      // Optimistic update - close edit mode immediately
-      setIsEditing(false);
-
-      // Use upsert for fastest performance
-      const { error } = await supabase
+      // Check if entry exists
+      const { data: existing, error: fetchError } = await supabase
         .from('weekly_goals')
-        .upsert({
-          user_id: user.id,
-          week_start: weekStart,
-          goals
-        }, {
-          onConflict: 'user_id,week_start'
-        });
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('week_start', weekStart)
+        .maybeSingle();
 
-      if (error) {
-        // Revert on error
-        setIsEditing(true);
-        throw error;
+      if (fetchError) throw fetchError;
+
+      let error;
+      if (existing) {
+        // Update existing
+        const { error: updateError } = await supabase
+          .from('weekly_goals')
+          .update({ 
+            goals,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', existing.id);
+        error = updateError;
+      } else {
+        // Insert new
+        const { error: insertError } = await supabase
+          .from('weekly_goals')
+          .insert({
+            user_id: user.id,
+            week_start: weekStart,
+            goals
+          });
+        error = insertError;
       }
 
+      if (error) throw error;
+
       toast.success('목표가 저장되었습니다');
+      setIsEditing(false);
     } catch (error) {
       console.error('Error saving goals:', error);
-      toast.error(`목표 저장에 실패했습니다: ${error instanceof Error ? error.message : '알 수 없는 오류'}`);
+      const errorMessage = error instanceof Error ? error.message : '알 수 없는 오류';
+      toast.error(`목표 저장에 실패했습니다: ${errorMessage}`);
     } finally {
       setIsSaving(false);
     }

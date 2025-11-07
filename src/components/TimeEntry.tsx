@@ -584,15 +584,15 @@ export const TimeEntry = () => {
                   <label className="text-sm font-medium">카테고리</label>
                   <Select
                     value={editingBlock.category}
-                    onValueChange={(value) => updateEditingBlock("category", value)}
+                    onValueChange={(value) => {
+                      updateEditingBlock("category", value);
+                    }}
                   >
                     <SelectTrigger>
                       <SelectValue>
-                        {editingBlock.category && (
-                          <span className={`inline-flex items-center px-3 py-1 rounded-md text-sm font-medium border ${getCategoryColor(editingBlock.category)}`}>
-                            {getCategoryLabel(editingBlock.category)}
-                          </span>
-                        )}
+                        <span className={`inline-flex items-center px-3 py-1 rounded-md text-sm font-medium border ${getCategoryColor(editingBlock.category)}`}>
+                          {getCategoryLabel(editingBlock.category)}
+                        </span>
                       </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
