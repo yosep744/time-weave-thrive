@@ -58,45 +58,41 @@ export function WeeklyGoals() {
   const saveGoals = async () => {
     try {
       setIsSaving(true);
+      
+      // Don't save if there are no goals
+      if (goals.length === 0) {
+        toast.error('최소 1개의 목표를 입력해주세요');
+        setIsSaving(false);
+        return;
+      }
+      
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         toast.error('로그인이 필요합니다');
         return;
       }
 
-      // First, try to check if entry exists
-      const { data: existing } = await supabase
-        .from('weekly_goals')
-        .select('id')
-        .eq('user_id', user.id)
-        .eq('week_start', weekStart)
-        .maybeSingle();
+      // Optimistic update - close edit mode immediately
+      setIsEditing(false);
 
-      let error;
-      if (existing) {
-        // Update existing entry
-        const result = await supabase
-          .from('weekly_goals')
-          .update({ goals })
-          .eq('user_id', user.id)
-          .eq('week_start', weekStart);
-        error = result.error;
-      } else {
-        // Insert new entry
-        const result = await supabase
-          .from('weekly_goals')
-          .insert({
-            user_id: user.id,
-            week_start: weekStart,
-            goals
-          });
-        error = result.error;
+      // Use upsert for fastest performance
+      const { error } = await supabase
+        .from('weekly_goals')
+        .upsert({
+          user_id: user.id,
+          week_start: weekStart,
+          goals
+        }, {
+          onConflict: 'user_id,week_start'
+        });
+
+      if (error) {
+        // Revert on error
+        setIsEditing(true);
+        throw error;
       }
 
-      if (error) throw error;
-
       toast.success('목표가 저장되었습니다');
-      setIsEditing(false);
     } catch (error) {
       console.error('Error saving goals:', error);
       toast.error(`목표 저장에 실패했습니다: ${error instanceof Error ? error.message : '알 수 없는 오류'}`);
