@@ -71,8 +71,8 @@ export const CategoryTimeTable = () => {
 
     window.addEventListener('timeBlocksUpdated', handleCustomUpdate);
 
-    // Poll every 2 seconds for immediate updates
-    const interval = setInterval(loadData, 2000);
+    // Poll every 500ms for ultra-fast updates
+    const interval = setInterval(loadData, 500);
     
     return () => {
       clearInterval(interval);

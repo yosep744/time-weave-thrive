@@ -64,16 +64,34 @@ export function WeeklyGoals() {
         return;
       }
 
-      // Use upsert for faster saving
-      const { error } = await supabase
+      // First, try to check if entry exists
+      const { data: existing } = await supabase
         .from('weekly_goals')
-        .upsert({
-          user_id: user.id,
-          week_start: weekStart,
-          goals
-        }, {
-          onConflict: 'user_id,week_start'
-        });
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('week_start', weekStart)
+        .maybeSingle();
+
+      let error;
+      if (existing) {
+        // Update existing entry
+        const result = await supabase
+          .from('weekly_goals')
+          .update({ goals })
+          .eq('user_id', user.id)
+          .eq('week_start', weekStart);
+        error = result.error;
+      } else {
+        // Insert new entry
+        const result = await supabase
+          .from('weekly_goals')
+          .insert({
+            user_id: user.id,
+            week_start: weekStart,
+            goals
+          });
+        error = result.error;
+      }
 
       if (error) throw error;
 
@@ -81,7 +99,7 @@ export function WeeklyGoals() {
       setIsEditing(false);
     } catch (error) {
       console.error('Error saving goals:', error);
-      toast.error('목표 저장에 실패했습니다');
+      toast.error(`목표 저장에 실패했습니다: ${error instanceof Error ? error.message : '알 수 없는 오류'}`);
     } finally {
       setIsSaving(false);
     }

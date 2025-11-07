@@ -527,10 +527,6 @@ export const TimeEntry = () => {
               </div>
             </div>
           </div>
-          
-          <p className="text-[10px] md:text-xs text-muted-foreground mt-2 text-center">
-            💡 드래그하여 블록 추가 • 위/아래 드래그로 크기 조정 • 블록 드래그로 이동 • 클릭하여 편집
-          </p>
         </div>
 
         {/* Edit Block Dialog */}
@@ -591,12 +587,18 @@ export const TimeEntry = () => {
                     onValueChange={(value) => updateEditingBlock("category", value)}
                   >
                     <SelectTrigger>
-                      <SelectValue />
+                      <SelectValue>
+                        {editingBlock.category && (
+                          <span className={`inline-flex items-center px-3 py-1 rounded-md text-sm font-medium border ${getCategoryColor(editingBlock.category)}`}>
+                            {getCategoryLabel(editingBlock.category)}
+                          </span>
+                        )}
+                      </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
                       {categories.map((cat) => (
                         <SelectItem key={cat.value} value={cat.value}>
-                          <span className={`px-3 py-1 rounded-md text-sm font-medium ${cat.color}`}>
+                          <span className={`inline-flex items-center px-3 py-1 rounded-md text-sm font-medium border ${cat.color}`}>
                             {cat.label}
                           </span>
                         </SelectItem>

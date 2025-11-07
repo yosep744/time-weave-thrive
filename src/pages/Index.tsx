@@ -123,11 +123,11 @@ const Index = () => {
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-3">
                       <Sparkles className="w-8 h-8 text-primary" />
-                      <h1 className="text-4xl md:text-5xl font-bold gradient-text">
+                      <h1 className="text-4xl md:text-5xl font-bold gradient-text whitespace-nowrap">
                         시간 사용 명세서
                       </h1>
                     </div>
-                    <p className="text-lg text-muted-foreground">
+                    <p className="text-lg text-muted-foreground whitespace-nowrap">
                       {today}
                     </p>
                   </div>
@@ -145,12 +145,12 @@ const Index = () => {
                 </div>
                 <div className="glass rounded-xl p-4">
                   <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-                    <p className="text-sm font-medium flex items-center gap-2">
+                    <p className="text-sm font-medium flex items-center gap-2 whitespace-nowrap">
                       <Target className="h-4 w-4 text-primary" />
                       매일 15분, 나를 성찰하는 시간
                     </p>
                     <div className="flex flex-col sm:flex-row items-center gap-3">
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-xs text-muted-foreground whitespace-nowrap">
                         시간을 정복한 사람, 류비셰프의 위대한 업적!
                       </p>
                       <HowToUseDialog />
