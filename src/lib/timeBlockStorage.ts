@@ -5,10 +5,12 @@ export const saveTimeBlock = async (date: string, blocks: any[]) => {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
     console.warn("User not authenticated - skipping save");
-    return;
+    throw new Error("User not authenticated");
   }
 
   try {
+    console.log(`Saving ${blocks.length} blocks for date ${date} user ${user.id}`);
+
     // Delete existing blocks for this date and user
     const { error: deleteError } = await supabase
       .from('time_blocks')
@@ -16,7 +18,10 @@ export const saveTimeBlock = async (date: string, blocks: any[]) => {
       .eq('date', date)
       .eq('user_id', user.id);
 
-    if (deleteError) throw deleteError;
+    if (deleteError) {
+      console.error('Error deleting old blocks:', deleteError);
+      throw deleteError;
+    }
 
     // Insert new blocks
     if (blocks.length > 0) {
@@ -33,7 +38,10 @@ export const saveTimeBlock = async (date: string, blocks: any[]) => {
         .from('time_blocks')
         .insert(blocksToInsert);
 
-      if (insertError) throw insertError;
+      if (insertError) {
+        console.error('Error inserting new blocks:', insertError);
+        throw insertError;
+      }
     }
 
     // Dispatch custom event for instant UI updates
@@ -102,21 +110,21 @@ export const getTimeBlocksForDateRange = async (startDate: Date, endDate: Date):
 
 export const getCategoryStats = (blocks: TimeBlockExport[]) => {
   const stats: Record<string, number> = {};
-  
+
   blocks.forEach(block => {
     if (!block.startTime || !block.endTime) return;
-    
+
     const [startHour, startMin] = block.startTime.split(":").map(Number);
     const [endHour, endMin] = block.endTime.split(":").map(Number);
     const startMinutes = startHour * 60 + startMin;
     const endMinutes = endHour * 60 + endMin;
     const duration = (endMinutes - startMinutes) / 60; // hours
-    
+
     if (duration > 0) {
       stats[block.category] = (stats[block.category] || 0) + duration;
     }
   });
-  
+
   return stats;
 };
 
@@ -159,9 +167,9 @@ export const saveCategories = async (categories: any[]) => {
 
     await supabase
       .from('categories')
-      .upsert(categoriesToInsert, { 
+      .upsert(categoriesToInsert, {
         onConflict: 'value,user_id',
-        ignoreDuplicates: false 
+        ignoreDuplicates: false
       });
   }
 

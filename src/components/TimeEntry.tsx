@@ -101,7 +101,10 @@ export const TimeEntry = () => {
           getCategories()
         ]);
 
-        if (loadedBlocks) setTimeBlocks(loadedBlocks);
+        console.log('Loaded blocks:', loadedBlocks);
+        if (loadedBlocks) {
+          setTimeBlocks(loadedBlocks);
+        }
         if (loadedCategories && loadedCategories.length > 0) {
           setCategories(loadedCategories);
         }
@@ -110,7 +113,7 @@ export const TimeEntry = () => {
       } catch (error) {
         console.error('Failed to load data:', error);
         toast.error('데이터를 불러오는데 실패했습니다');
-        setIsInitialLoad(false);
+        // Do NOT set isInitialLoad to false if failed, to prevent overwriting with empty data
       }
     };
 
@@ -119,18 +122,17 @@ export const TimeEntry = () => {
 
   useEffect(() => {
     if (isInitialLoad) {
-      console.log('Skipping save - initial load');
       return;
     }
 
-    console.log('Time blocks changed, will save in 300ms:', timeBlocks.length); // Debug log
+    console.log('Time blocks changed, will save in 300ms:', timeBlocks.length);
 
     const saveData = async () => {
       try {
-        console.log('Saving time blocks to database...'); // Debug log
+        console.log('Saving time blocks to database...');
         const { saveTimeBlock } = await import('@/lib/timeBlockStorage');
         await saveTimeBlock(today, timeBlocks);
-        console.log('Time blocks saved successfully'); // Debug log
+        console.log('Time blocks saved successfully');
         toast.success("저장되었습니다");
       } catch (error) {
         console.error('Failed to save time blocks:', error);
@@ -688,6 +690,15 @@ export const TimeEntry = () => {
             )}
           </DialogContent>
         </Dialog>
+
+        {/* Debug Info Panel - Temporary for troubleshooting */}
+        <div className="mt-8 p-4 bg-slate-100 rounded-lg text-xs font-mono text-slate-600 space-y-1 border border-slate-200">
+          <p className="font-bold text-slate-800 mb-2">🔧 Debug Info (Troubleshooting)</p>
+          <p>Date (Local): {today}</p>
+          <p>Blocks Loaded: {timeBlocks.length}</p>
+          <p>Initial Load: {isInitialLoad ? 'Yes' : 'No'}</p>
+          <p>User ID: {supabase.auth.getUser().then(u => u.data.user?.id || 'None')}</p>
+        </div>
       </CardContent>
     </Card>
   );
