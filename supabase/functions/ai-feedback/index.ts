@@ -12,8 +12,18 @@ serve(async (req) => {
 
   try {
     const { reflection, timeBlocks } = await req.json();
+
+    // Input validation
+    if (reflection && reflection.length > 2000) {
+      throw new Error('Reflection too long (max 2000 characters)');
+    }
+
+    if (!Array.isArray(timeBlocks) || timeBlocks.length > 100) {
+      throw new Error('Invalid timeBlocks (must be array, max 100 items)');
+    }
+
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
-    
+
     if (!LOVABLE_API_KEY) {
       throw new Error('LOVABLE_API_KEY is not configured');
     }
@@ -24,7 +34,7 @@ serve(async (req) => {
       const [startHour, startMin] = block.startTime.split(':').map(Number);
       const [endHour, endMin] = block.endTime.split(':').map(Number);
       const duration = ((endHour * 60 + endMin) - (startHour * 60 + startMin)) / 60;
-      
+
       categoryStats[block.category] = (categoryStats[block.category] || 0) + duration;
     });
 
