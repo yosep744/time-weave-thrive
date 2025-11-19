@@ -91,6 +91,9 @@ export const TimeEntry = () => {
   const [editingBlock, setEditingBlock] = useState<TimeBlock | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
+  // Track if data has been modified by user
+  const isDirty = useRef(false);
+
   // Load data on mount
   useEffect(() => {
     const loadData = async () => {
@@ -104,6 +107,8 @@ export const TimeEntry = () => {
         console.log('Loaded blocks:', loadedBlocks);
         if (loadedBlocks) {
           setTimeBlocks(loadedBlocks);
+          // Data loaded from DB is NOT dirty
+          isDirty.current = false;
         }
         if (loadedCategories && loadedCategories.length > 0) {
           setCategories(loadedCategories);
@@ -125,6 +130,12 @@ export const TimeEntry = () => {
       return;
     }
 
+    // Only save if data is dirty (modified by user)
+    if (!isDirty.current) {
+      console.log('Skipping save - data not modified');
+      return;
+    }
+
     console.log('Time blocks changed, will save in 300ms:', timeBlocks.length);
 
     const saveData = async () => {
@@ -134,6 +145,7 @@ export const TimeEntry = () => {
         await saveTimeBlock(today, timeBlocks);
         console.log('Time blocks saved successfully');
         toast.success("저장되었습니다");
+        isDirty.current = false; // Reset dirty flag after save
       } catch (error) {
         console.error('Failed to save time blocks:', error);
         toast.error('시간 블록 저장에 실패했습니다');
@@ -160,6 +172,7 @@ export const TimeEntry = () => {
 
   const removeTimeBlock = (id: string) => {
     setTimeBlocks(timeBlocks.filter((block) => block.id !== id));
+    isDirty.current = true;
   };
 
   const updateTimeBlock = (id: string, field: keyof TimeBlock, value: string) => {
@@ -172,22 +185,23 @@ export const TimeEntry = () => {
       return a.startTime.localeCompare(b.startTime);
     });
 
-    console.log('Updating time block:', id, field, value); // Debug log
+    console.log('Updating time block:', id, field, value);
     setTimeBlocks(updatedBlocks);
+    isDirty.current = true;
   };
 
   const updateEditingBlock = (field: keyof TimeBlock, value: string) => {
     if (editingBlock) {
       const updated = { ...editingBlock, [field]: value };
       setEditingBlock(updated);
-      console.log('Updated editing block:', field, value, updated); // Debug log
+      console.log('Updated editing block:', field, value, updated);
     }
   };
 
   const handleSaveEditingBlock = () => {
     if (editingBlock) {
-      console.log('Saving block with category:', editingBlock.category); // Debug log
-      console.log('Current timeBlocks before update:', timeBlocks.map(b => ({ id: b.id, category: b.category }))); // Debug
+      console.log('Saving block with category:', editingBlock.category);
+      console.log('Current timeBlocks before update:', timeBlocks.map(b => ({ id: b.id, category: b.category })));
 
       // Update all fields at once
       const updatedBlocks = timeBlocks.map((block) =>
@@ -207,8 +221,9 @@ export const TimeEntry = () => {
         return a.startTime.localeCompare(b.startTime);
       });
 
-      console.log('Updated timeBlocks after update:', updatedBlocks.map(b => ({ id: b.id, category: b.category }))); // Debug
+      console.log('Updated timeBlocks after update:', updatedBlocks.map(b => ({ id: b.id, category: b.category })));
       setTimeBlocks(updatedBlocks);
+      isDirty.current = true;
 
       setIsEditDialogOpen(false);
       setEditingBlock(null);
@@ -244,6 +259,8 @@ export const TimeEntry = () => {
     setCategories([...categories, newCategory]);
     setNewCategoryLabel("");
     setNewCategoryColor(COLOR_OPTIONS[0].value);
+    // Categories are saved separately, but maybe we should track dirty too?
+    // For now, let's focus on timeBlocks
   };
 
   const updateCategory = (oldValue: string, newLabel: string, newColor: string) => {
@@ -280,6 +297,7 @@ export const TimeEntry = () => {
     };
 
     setTimeBlocks([...timeBlocks, newBlock]);
+    isDirty.current = true;
     // Open edit dialog immediately
     setEditingBlock(newBlock);
     setIsEditDialogOpen(true);

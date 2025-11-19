@@ -65,7 +65,7 @@ export const getTimeBlock = async (date: string) => {
 
   if (error) {
     console.error('Error fetching time blocks:', error);
-    return [];
+    throw error;
   }
 
   return data.map(block => ({
